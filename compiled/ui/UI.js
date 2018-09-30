@@ -12,8 +12,8 @@ class UI {
             this.questions[key] = new Question_1.default(text, responseHandler);
         }
     }
-    start(readline) {
-        this.questions[this.entrypoint].ask(readline, this.questions);
+    start(readline, client) {
+        this.questions[this.entrypoint].ask(readline, client, this.questions);
     }
 }
 exports.default = UI;

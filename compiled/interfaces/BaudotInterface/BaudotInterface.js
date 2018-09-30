@@ -75,7 +75,10 @@ class BaudotInterface extends Interface_1.default {
                 logging_1.logger.log("outside ended");
             this.end(); // disallow reconnection
         });
-        this._external.on("close", () => logging_1.logger.log("outside closed"));
+        this._external.on("close", () => logging_1.logger.log("_outside closed"));
+        this._internal.on("close", () => logging_1.logger.log("_inside closed"));
+        this.external.on("close", () => logging_1.logger.log("outside closed"));
+        this.internal.on("close", () => logging_1.logger.log("inside closed"));
     }
     get bytesUnacknowleged() {
         return this.bytesSent - this.bytesAcknowleged + (this.bytesSent < this.bytesAcknowleged ? 256 : 0);

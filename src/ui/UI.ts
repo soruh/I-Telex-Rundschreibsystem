@@ -1,7 +1,6 @@
 import { ReadLine } from "readline";
 import Question from "./Question";
-import { logger } from "../util/logging";
-import {QuestionList, UIConfig} from "./UITypes";
+import { QuestionList, UIConfig, Client } from "./UITypes";
 
 class UI {
 	private questions:QuestionList = {};
@@ -18,8 +17,8 @@ class UI {
 			this.questions[key] = new Question(text, responseHandler);
 		}
 	}
-	public start(readline:ReadLine){
-		this.questions[this.entrypoint].ask(readline, this.questions);
+	public start(readline:ReadLine, client:Client){
+		this.questions[this.entrypoint].ask(readline, client, this.questions);
 	}
 }
 

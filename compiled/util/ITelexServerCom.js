@@ -17,13 +17,8 @@ if (module.parent != null) {
 //#region imports
 const ip = require("ip");
 const net = require("net");
-const ChunkPackages_1 = require("../util/ChunkPackages");
-Buffer.prototype.readNullTermString =
-    function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
-        let firstZero = this.indexOf(0, start);
-        let stop = firstZero >= start && firstZero <= end ? firstZero : end;
-        return this.toString(encoding, start, stop);
-    };
+const ChunkPackages_1 = require("./ChunkPackages");
+//#endregion
 const constants = {
     PackageNames: {
         1: "Client_update",
@@ -349,8 +344,8 @@ function decPackages(buffer) {
     return out;
 }
 exports.decPackages = decPackages;
-const TlnServer = { host: "localhost", port: 11811 };
-function iTelexRequest(number) {
+const TlnServer = { host: "telexgateway.de", port: 11811 };
+function peerQuery(number) {
     return new Promise((resolve, reject) => {
         let socket = new net.Socket();
         let chunker = new ChunkPackages_1.default();
@@ -389,7 +384,7 @@ function iTelexRequest(number) {
         });
     });
 }
-exports.iTelexRequest = iTelexRequest;
+exports.peerQuery = peerQuery;
 function fullQuery(serverpin) {
     return new Promise((resolve, reject) => {
         let results = [];

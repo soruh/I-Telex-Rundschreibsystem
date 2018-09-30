@@ -15,7 +15,7 @@ if (module.parent != null) {
     console.log(loadOrder.join(" → "));
 }
 const stream = require("stream");
-const duplex = require("duplexer");
+const duplexer_1 = require("./duplexer");
 class Bridge {
     constructor() {
         const A_WRITE = new stream.PassThrough();
@@ -24,8 +24,8 @@ class Bridge {
         const B_READ = new stream.PassThrough();
         A_WRITE.pipe(B_READ);
         B_WRITE.pipe(A_READ);
-        this.A = duplex(A_WRITE, A_READ);
-        this.B = duplex(B_WRITE, B_READ);
+        this.A = duplexer_1.default(A_WRITE, A_READ);
+        this.B = duplexer_1.default(B_WRITE, B_READ);
     }
 }
 exports.default = Bridge;

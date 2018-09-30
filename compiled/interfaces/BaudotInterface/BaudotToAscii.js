@@ -17,8 +17,8 @@ if (module.parent != null) {
 const stream_1 = require("stream");
 const baudot_1 = require("../../util/baudot");
 class BaudotToAscii extends stream_1.Transform {
-    constructor(options) {
-        super(options);
+    constructor() {
+        super(...arguments);
         this.baudotMode = baudot_1.baudotModeUnknown;
     }
     _transform(chunk, encoding, callback) {

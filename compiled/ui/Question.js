@@ -5,17 +5,17 @@ class Question {
         this.text = text;
         this.responseHandler = responseHandler;
     }
-    ask(readline, questions) {
+    ask(readline, client, questions) {
         readline.question(this.text, (response) => {
-            this.responseHandler(response, readline, questions, (next) => {
+            this.responseHandler(response, readline, client, questions, (next) => {
                 if (next instanceof Question) {
-                    next.ask(readline, questions);
+                    next.ask(readline, client, questions);
                 }
                 else if (typeof next === "function") {
                     next(readline, questions);
                 }
                 else {
-                    this.ask(readline, questions);
+                    this.ask(readline, client, questions);
                 }
             });
         });

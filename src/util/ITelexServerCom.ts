@@ -6,23 +6,11 @@ if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").sl
 //#region imports
 import * as ip from "ip";
 import * as net from "net";
-import ChunkPackages from "../util/ChunkPackages";
+import ChunkPackages from "./ChunkPackages";
 // tslint:disable-next-line:max-line-length
 import { Package_decoded, PackageData_encoded, PackageData_decoded_5, peerList, Peer, PackageData_decoded, Package_encoded, rawPackage, PackageData_decoded_1, PackageData_decoded_2, PackageData_decoded_3, PackageData_decoded_4, PackageData_decoded_6, PackageData_decoded_7, PackageData_decoded_8, PackageData_decoded_9, PackageData_decoded_10, PackageData_decoded_255, Package_decoded_1, Package_decoded_2, Package_decoded_3, Package_decoded_4, Package_decoded_5, Package_decoded_6, Package_decoded_7, Package_decoded_8, Package_decoded_9, Package_decoded_10, Package_decoded_255 } from "./ITelexServerComTypes";
 
 //#endregion
-
-declare global {
-	interface Buffer {
-		readNullTermString: (string?, start?, end?) => string;
-	}
-}
-Buffer.prototype.readNullTermString = 
-function readNullTermString(encoding: string = "utf8", start: number = 0, end: number = this.length):string {
-	let firstZero = this.indexOf(0, start);
-	let stop = firstZero >= start && firstZero <= end ? firstZero : end;
-	return this.toString(encoding, start, stop);
-};
 
 const constants = {
 	PackageNames: {
@@ -345,9 +333,9 @@ function decPackages(buffer: number[] | Buffer): Package_decoded[] {
 	return out;
 }
 
-const TlnServer = {host:"localhost", port:11811};
+const TlnServer = {host:"telexgateway.de", port:11811};
 
-function iTelexRequest(number):Promise<PackageData_decoded_5>{
+function peerQuery(number):Promise<PackageData_decoded_5>{
 	return new Promise((resolve, reject)=>{
 		let socket = new net.Socket();
 		let chunker = new ChunkPackages();
@@ -495,7 +483,7 @@ export {
 	decPackage,
 	encPackage,
 	decPackages,
-	iTelexRequest,
+	peerQuery,
 	dynIpUpdate,
 	//#endregion
 };

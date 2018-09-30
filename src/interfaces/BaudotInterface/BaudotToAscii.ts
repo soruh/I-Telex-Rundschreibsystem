@@ -6,9 +6,6 @@ import { baudotModeUnknown, asciify } from "../../util/baudot";
 
 class BaudotToAscii extends Transform {
 	public baudotMode = baudotModeUnknown;
-	constructor(options?){
-		super(options);
-	}
 	public _transform(chunk:Buffer, encoding:string, callback:(err?:Error, data?:string)=>void){
 		let [ascii, newBaudotMode] = asciify(chunk, this.baudotMode);
 		this.setMode(newBaudotMode);

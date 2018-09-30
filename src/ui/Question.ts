@@ -1,5 +1,7 @@
 import { ReadLine } from "readline";
-import { Next, responseHandlerFunction, QuestionList } from "./UITypes";
+import { Next, responseHandlerFunction, QuestionList, Client } from "./UITypes";
+import { Socket } from "net";
+import Interface from "../interfaces/Interface";
 
 class Question {
 	public id:symbol;
@@ -9,15 +11,15 @@ class Question {
 		this.text = text;
 		this.responseHandler = responseHandler;
 	}
-	public ask(readline:ReadLine, questions:QuestionList){
+	public ask(readline:ReadLine, client:Client, questions:QuestionList){
 		readline.question(this.text, (response:string)=>{
-			this.responseHandler(response, readline, questions, (next?:Next)=>{
+			this.responseHandler(response, readline, client, questions, (next?:Next)=>{
 				if(next instanceof Question){
-					next.ask(readline, questions);
+					next.ask(readline, client, questions);
 				}else if(typeof next === "function"){
 					next(readline, questions);
 				}else{
-					this.ask(readline, questions);
+					this.ask(readline, client, questions);
 				}
 			});
 		});

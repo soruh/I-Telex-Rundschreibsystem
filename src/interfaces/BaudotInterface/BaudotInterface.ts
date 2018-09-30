@@ -83,7 +83,12 @@ class BaudotInterface extends Interface{
 			if(logDebug)  logger.log("outside ended");
 			this.end(); // disallow reconnection
 		});
-		this._external.on("close",()=>logger.log("outside closed"));
+
+		this._external.on("close",()=>logger.log("_outside closed"));
+		this._internal.on("close",()=>logger.log("_inside closed"));
+
+		this.external.on("close",()=>logger.log("outside closed"));
+		this.internal.on("close",()=>logger.log("inside closed"));
 	}
 
 	private resetTimeout(){
@@ -154,7 +159,7 @@ class BaudotInterface extends Interface{
 			this.emit("send", data);
 		}
 	}
-	private end(){
+	public end(){
 		clearInterval(this.pulse);
 		clearTimeout(this.baudotTimeout);
 

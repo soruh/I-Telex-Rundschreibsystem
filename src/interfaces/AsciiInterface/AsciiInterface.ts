@@ -20,6 +20,9 @@ class AsciiInterface extends Interface {
 			this._internal.pipe(this._external);
 		}
 	}
+	public call(extension:string){
+		this._external.write(`*${extension}*`);
+	}
 }
 
 export default AsciiInterface;

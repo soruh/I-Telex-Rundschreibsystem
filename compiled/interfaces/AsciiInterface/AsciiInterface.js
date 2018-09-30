@@ -32,5 +32,8 @@ class AsciiInterface extends Interface_1.default {
             this._internal.pipe(this._external);
         }
     }
+    call(extension) {
+        this._external.write(`*${extension}*`);
+    }
 }
 exports.default = AsciiInterface;

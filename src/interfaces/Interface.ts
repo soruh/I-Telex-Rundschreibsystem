@@ -36,6 +36,12 @@ class Interface extends EventEmitter{
 		this._external.destroy();
 		this._internal.destroy();
 	}
+	public call(extension:string){
+		// overwrite in child class
+	}
+	public end(){
+		// overwrite in child class
+	}
 }
 
 export default Interface;
