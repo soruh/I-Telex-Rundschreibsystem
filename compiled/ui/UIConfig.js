@@ -84,7 +84,7 @@ let uiConfig = {
         },
     },
     call: {
-        text: "Welcome!\¶\nenter numbers seperated by ','\r\n",
+        text: "Welcome!\r\nenter numbers seperated by ','\r\n",
         responseHandler: (response, readline, client, questions, callback) => {
             const internal = client.interface.internal;
             readline.close();

@@ -1,7 +1,5 @@
 import { ReadLine } from "readline";
 import { Next, responseHandlerFunction, QuestionList, Client } from "./UITypes";
-import { Socket } from "net";
-import Interface from "../interfaces/Interface";
 
 class Question {
 	public id:symbol;
