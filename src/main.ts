@@ -4,11 +4,12 @@ if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").sl
 
 import * as readline from "readline";
 import * as net from "net";
-import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import UI from "./ui/UI";
 import uiConfig from "./ui/UIConfig";
 import { logger, inspect } from "./util/logging";
 import { Client } from "./ui/UITypes";
+import AsciiInterface from "./interfaces/AsciiInterface/AsciiInterface";
+import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 
 declare global {
 	interface Buffer {
@@ -25,6 +26,7 @@ function readNullTermString(encoding: string = "utf8", start: number = 0, end: n
 
 const server = new net.Server();
 server.on('connection', socket=>{
+	// const interFace = new AsciiInterface(false);
 	const interFace = new BaudotInterface();
 
 	socket.pipe(interFace.external);
@@ -34,10 +36,6 @@ server.on('connection', socket=>{
 		socket.end();
 	});
 
-	interFace.on('call', (ext:number)=>{
-		logger.log(inspect`calling extension: ${ext}`);
-	});
-
 	// interFace.on('timeout', (ext:number)=>{
 		
 	// });
@@ -45,7 +43,6 @@ server.on('connection', socket=>{
 	const rl = readline.createInterface({
 		input:interFace.internal,
 		output:interFace.internal,
-		crlfDelay: 500,
 	});
 
 
@@ -54,8 +51,12 @@ server.on('connection', socket=>{
 		interface:interFace,
 		socket,
 	};
-	interFace.on('call',()=>{
+
+	// ui.start(rl, client); // for ascii interface
+
+	interFace.on('call',(ext)=>{ // for baudot interface
 		ui.start(rl, client);
+		logger.log(inspect`calling extension: ${ext}`);
 	});
 });
 server.listen(4000);

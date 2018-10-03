@@ -9,10 +9,16 @@ async function serialEachPromise<T,U>(iterable:Iterable<T>, promiseFunction:(val
 	let results = [];
 	for(let key in iterable){
 		try{
+			// tslint:disable-next-line:max-line-length
+			// logger.log('silly', inspect`starting promiseFunction ${promiseFunction.name?promiseFunction.name+" ":""}called with key: ${key} value: ${iterable[key]} `);
 			results.push(await promiseFunction(iterable[key], key));
-		}catch(e){
-			if(e) logger.log('error: '+inspect`${e}`);
-		}
+			// tslint:disable-next-line:max-line-length
+			// logger.log('silly', inspect`finished promiseFunction ${promiseFunction.name?promiseFunction.name+" ":""}called with key: ${key} value: ${iterable[key]} returned: ${results[results.length]}`);
+		  }catch(e){
+			// tslint:disable-next-line:max-line-length
+			logger.log('silly', inspect`error in promiseFunction ${promiseFunction.name?promiseFunction.name+" ":""} called with key: ${key} value: ${iterable[key]}`);
+			logger.log('error', inspect`${e}`);
+		  }
 	}
 	return results;
 }

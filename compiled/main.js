@@ -16,10 +16,10 @@ if (module.parent != null) {
 }
 const readline = require("readline");
 const net = require("net");
-const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface");
 const UI_1 = require("./ui/UI");
 const UIConfig_1 = require("./ui/UIConfig");
 const logging_1 = require("./util/logging");
+const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface");
 Buffer.prototype.readNullTermString =
     function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
         let firstZero = this.indexOf(0, start);
@@ -28,29 +28,28 @@ Buffer.prototype.readNullTermString =
     };
 const server = new net.Server();
 server.on('connection', socket => {
+    // const interFace = new AsciiInterface(false);
     const interFace = new BaudotInterface_1.default();
     socket.pipe(interFace.external);
     interFace.external.pipe(socket);
     interFace.on('end', () => {
         socket.end();
     });
-    interFace.on('call', (ext) => {
-        logging_1.logger.log(logging_1.inspect `calling extension: ${ext}`);
-    });
     // interFace.on('timeout', (ext:number)=>{
     // });
     const rl = readline.createInterface({
         input: interFace.internal,
         output: interFace.internal,
-        crlfDelay: 500,
     });
     const ui = new UI_1.default(UIConfig_1.default, "call");
     const client = {
         interface: interFace,
         socket,
     };
-    interFace.on('call', () => {
+    // ui.start(rl, client); // for ascii interface
+    interFace.on('call', (ext) => {
         ui.start(rl, client);
+        logging_1.logger.log(logging_1.inspect `calling extension: ${ext}`);
     });
 });
 server.listen(4000);

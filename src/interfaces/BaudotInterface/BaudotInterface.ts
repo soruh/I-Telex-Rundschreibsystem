@@ -9,9 +9,10 @@ import ChunkPackages from "../../util/ChunkPackages";
 import BaudotToAscii from "./BaudotToAscii";
 import AsciiToBaudot from "./AsciiToBaudot";
 import PackageBaudotData from "./PackageBaudotData";
+import { LOGBAUDOTINTERFACE } from "../../config";
 
 
-const logDebug = true;
+const logDebug = LOGBAUDOTINTERFACE;
 
 function byteSize(value){
 	return Math.ceil(Math.log((value||1)+1)/Math.log(0x100));
@@ -24,6 +25,19 @@ function symbolName(s: symbol):string {
 	}
 }
 
+function encodeExt(ext:string):number{
+	if (!ext) {
+		return 0;
+	} else if (ext === "0") {
+		return 110;
+	} else if (ext === "00") {
+		return 100;
+	} else if (ext.length === 1) {
+		return parseInt(ext) + 100;
+	} else {
+		return parseInt(ext)||0;
+	}
+}
 
 class BaudotInterface extends Interface{
 	public version = 1;
@@ -136,9 +150,9 @@ class BaudotInterface extends Interface{
 		this.bytesSent += 5;
 		this.baudotifier.setMode(baudotModeBu);
 	}
-	public call(extension){
+	public call(extension:string){
 		this.sendVersion(this.version);
-		this.sendDirectDial(extension);
+		this.sendDirectDial(encodeExt(extension));
 	}
 	public write(string:string){
 		if(logDebug)  logger.log(inspect`sendString string: ${string.length} ${util.inspect(string)}`);

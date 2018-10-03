@@ -24,11 +24,14 @@ if (module.parent != null) {
 }
 const stream_1 = require("stream");
 const net_1 = require("net");
+const util = require("util");
 const ITelexServerCom_1 = require("./util/ITelexServerCom");
 const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface");
 const AsciiInterface_1 = require("./interfaces/AsciiInterface/AsciiInterface");
 const logging_1 = require("./util/logging");
+const confirm_1 = require("./confirm");
 const serialEachPromise_1 = require("./util/serialEachPromise");
+const config_1 = require("./config");
 function callGroup(group, callback) {
     let output = new stream_1.PassThrough();
     serialEachPromise_1.default(group, (number, key) => new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
@@ -49,57 +52,64 @@ function callGroup(group, callback) {
                     break;
                 case 6:
                 default:
-                    output.write("invalid client type\r\n\n");
+                    output.write("invalid client type\r\n");
                     reject();
             }
+            output.write(`${config_1.DELIMITER}\r\n`);
             if (interFace) {
                 // output.write('valid client type\r\n');
                 let socket = new net_1.Socket();
                 socket.pipe(interFace.external);
                 interFace.external.pipe(socket);
                 let timeout = setTimeout(() => {
-                    output.write("\r\ntimeout\r\n\n");
+                    output.write("timeout\r\n");
                     interFace.end();
+                    output.write(`${config_1.DELIMITER}\r\n`);
                     reject();
                 }, 10000);
                 socket.on('connect', () => {
-                    interFace.call(peer.extension);
-                    setTimeout(() => {
-                        interFace.internal.write('@');
-                    }, 1500);
-                    interFace.internal.pipe(output);
-                    interFace.internal.once('data', () => {
-                        clearTimeout(timeout);
-                        setTimeout(() => {
-                            output.write('\r\n\n');
-                            interFace.internal.unpipe(output);
-                            let connection = {
-                                socket,
-                                name: peer.name,
-                                number: peer.number,
-                                interface: interFace,
-                            };
-                            resolve(connection);
-                        }, 7500);
-                    });
+                    if (!(interFace instanceof AsciiInterface_1.default && peer.extension === null)) {
+                        logging_1.logger.log('calling: ' + peer.extension);
+                        interFace.call(peer.extension);
+                    }
+                    confirm_1.default(interFace.internal, output, timeout)
+                        .then(() => {
+                        output.write('\r\n');
+                        interFace.internal.unpipe(output);
+                        let connection = {
+                            socket,
+                            name: peer.name,
+                            number: peer.number,
+                            interface: interFace,
+                        };
+                        output.write(`${config_1.DELIMITER}\r\n`);
+                        resolve(connection);
+                    })
+                        .catch(err => logging_1.logger.log(logging_1.inspect `error: ${err}`));
                 });
                 interFace.on('reject', reason => {
-                    output.write(`\r\n${reason}\r\n\n`);
                     clearTimeout(timeout);
                     interFace.end();
+                    logging_1.logger.log(util.inspect(reason));
+                    output.write(`\r\n${reason}`); // \r\n is included in reject message
+                    output.write(`${config_1.DELIMITER}\r\n`);
                     reject();
                 });
                 socket.once('error', (err) => {
                     switch (err.code) {
                         case "EHOSTUNREACH":
                             clearTimeout(timeout);
-                            output.write("\r\nderailed\r\n\n");
+                            output.write("\r\nderailed\r\n");
                             interFace.end();
+                            output.write(`${config_1.DELIMITER}\r\n`);
                             reject();
                             break;
                         default:
-                            logging_1.logger.log('error: ' + err.code);
+                            logging_1.logger.log('unexpected error: ' + err.code);
                     }
+                });
+                socket.on('error', (err) => {
+                    logging_1.logger.log(logging_1.inspect `socket error: ${err}`);
                 });
                 socket.connect({
                     host: peer.hostname || peer.ipaddress,
@@ -108,7 +118,8 @@ function callGroup(group, callback) {
             }
         }
         else {
-            output.write("number not found\r\n\n");
+            output.write("number not found\r\n");
+            output.write(`${config_1.DELIMITER}\r\n`);
             reject();
         }
     })))

@@ -8,10 +8,8 @@ import CallEndDetector from "./CallEndDetector";
 import serialEachPromise from "../util/serialEachPromise";
 import BaudotInterface from "../interfaces/BaudotInterface/BaudotInterface";
 import { logger, inspect } from "../util/logging";
-import UI from "./UI";
-import { createInterface } from "readline";
-import { Duplex } from "stream";
-
+import confirm from "../confirm";
+import { DELIMITER } from "../config";
 
 let uiConfig:UIConfig = {
 	start: {
@@ -71,15 +69,19 @@ let uiConfig:UIConfig = {
 		text: "Welcome!\r\nenter numbers seperated by ','\r\n",
 		responseHandler: (response, readline, client, questions, callback)=>{
 			const internal = client.interface.internal;
+			internal.write('\r\n');
 
 			readline.close();
 
 			let output = callGroup(response.split(","), (connections)=>{
+				connections = connections.filter(x=>x);
+
 				output.unpipe(internal);
 				// tslint:disable-next-line:max-line-length
-				internal.write(`You are now connected to ${connections.length} peer${connections.length===1?'':'s'} '+++' to end message\r\n`);
+				internal.write(`You are now connected to ${connections.length} peer${connections.length===1?'':'s'}. Type '+++' to end message\r\n`);
 				
 				for(let connection of connections){
+					connection.interface.internal.write('\r\n');
 					internal.pipe(connection.interface.internal);
 				}
 
@@ -92,43 +94,66 @@ let uiConfig:UIConfig = {
 					for(let connection of connections){
 						internal.pipe(connection.interface.internal);
 					}
-					internal.write(`\r\n\r\nStopped transmitting message\r\n`);
+					internal.write(`\r\n\nStopped transmitting message\r\n`);
 
 					serialEachPromise(connections, (connection, index)=>new Promise((resolve, reject)=>{
-						internal.write(`confirming: ${connection.name}(${connection.number})\r\n`);
+						internal.write(`confirming: ${connection.number} (${connection.name})\r\n`);
+						internal.write(`${DELIMITER}\r\n`);
 
 						if((connection.interface as BaudotInterface).drained !== false){
+							// drained == true or drained == undefined (for Ascii clients)
 							logger.log('was already drained');
-							connection.interface.internal.pipe(internal);
-							connection.interface.internal.write('@');
-							setTimeout(end, 10000);
+
+							confirmClient();
+							
 						}else{
 							connection.interface.once('drain', ()=>{
 								logger.log('drained');
-								connection.interface.internal.pipe(internal);
-								connection.interface.internal.write('@');
-								setTimeout(end, 10000);
+
+								confirmClient();
 							});
 						}
 
-						function end(){
-							connection.interface.internal.unpipe(internal);
 
-							if(connection.interface instanceof BaudotInterface){
-								connection.interface.sendEnd();
-								setTimeout(()=>{
+						function confirmClient(){
+							function close(){
+								internal.write(`${DELIMITER}\r\n\n`);
+								connection.interface.internal.unpipe(internal);
+
+								if(connection.interface instanceof BaudotInterface){
+									connection.interface.sendEnd();
+									setTimeout(()=>{
+										connection.interface.end();
+										connection.socket.end();
+									}, 2000);
+								}else{
 									connection.interface.end();
 									connection.socket.end();
-								}, 2000);
-							}else{
-								connection.interface.end();
-								connection.socket.end();
+								}
+								resolve();
 							}
-							resolve();
+
+							let timeout = setTimeout(()=>{
+								internal.write('timeout\r\n');
+								close();
+							}, 10000);
+
+							confirm(connection.interface.internal, internal, timeout)
+							.then(()=>{
+								internal.write('\r\n');
+								close();
+							})
+							.catch(err=>{
+								logger.log(inspect`error: ${err}`);
+								internal.write('error\r\n');
+								close();
+							});
 						}
 					}))
 					.then(()=>{
+						logger.log("confirmed all peers");
 						internal.write('\r\nconfirmed all peers\r\n\r\n');
+
 						if(client.interface instanceof BaudotInterface){
 							client.interface.sendEnd();
 							setTimeout(()=>{
@@ -140,7 +165,7 @@ let uiConfig:UIConfig = {
 							client.socket.end();
 						}
 					})
-					.catch(err=>logger.log(inspect`error: ${err}`));
+					.catch(err=>logger.log(inspect`confirmation error: ${err}`));
 				});
 			});
 			output.pipe(internal);

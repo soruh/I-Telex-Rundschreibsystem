@@ -19,6 +19,8 @@ const CallEndDetector_1 = require("./CallEndDetector");
 const serialEachPromise_1 = require("../util/serialEachPromise");
 const BaudotInterface_1 = require("../interfaces/BaudotInterface/BaudotInterface");
 const logging_1 = require("../util/logging");
+const confirm_1 = require("../confirm");
+const config_1 = require("../config");
 let uiConfig = {
     start: {
         text: "welcome!\r\n'1' for A1\r\n'2' for A2\r\n'end' to disconnect\r\n",
@@ -87,12 +89,15 @@ let uiConfig = {
         text: "Welcome!\r\nenter numbers seperated by ','\r\n",
         responseHandler: (response, readline, client, questions, callback) => {
             const internal = client.interface.internal;
+            internal.write('\r\n');
             readline.close();
             let output = callGroup_1.default(response.split(","), (connections) => {
+                connections = connections.filter(x => x);
                 output.unpipe(internal);
                 // tslint:disable-next-line:max-line-length
-                internal.write(`You are now connected to ${connections.length} peer${connections.length === 1 ? '' : 's'} '+++' to end message\r\n`);
+                internal.write(`You are now connected to ${connections.length} peer${connections.length === 1 ? '' : 's'}. Type '+++' to end message\r\n`);
                 for (let connection of connections) {
+                    connection.interface.internal.write('\r\n');
                     internal.pipe(connection.interface.internal);
                 }
                 let detector = new CallEndDetector_1.default();
@@ -102,40 +107,56 @@ let uiConfig = {
                     for (let connection of connections) {
                         internal.pipe(connection.interface.internal);
                     }
-                    internal.write(`\r\n\r\nStopped transmitting message\r\n`);
+                    internal.write(`\r\n\nStopped transmitting message\r\n`);
                     serialEachPromise_1.default(connections, (connection, index) => new Promise((resolve, reject) => {
-                        internal.write(`confirming: ${connection.name}(${connection.number})\r\n`);
+                        internal.write(`confirming: ${connection.number} (${connection.name})\r\n`);
+                        internal.write(`${config_1.DELIMITER}\r\n`);
                         if (connection.interface.drained !== false) {
+                            // drained == true or drained == undefined (for Ascii clients)
                             logging_1.logger.log('was already drained');
-                            connection.interface.internal.pipe(internal);
-                            connection.interface.internal.write('@');
-                            setTimeout(end, 10000);
+                            confirmClient();
                         }
                         else {
                             connection.interface.once('drain', () => {
                                 logging_1.logger.log('drained');
-                                connection.interface.internal.pipe(internal);
-                                connection.interface.internal.write('@');
-                                setTimeout(end, 10000);
+                                confirmClient();
                             });
                         }
-                        function end() {
-                            connection.interface.internal.unpipe(internal);
-                            if (connection.interface instanceof BaudotInterface_1.default) {
-                                connection.interface.sendEnd();
-                                setTimeout(() => {
+                        function confirmClient() {
+                            function close() {
+                                internal.write(`${config_1.DELIMITER}\r\n\n`);
+                                connection.interface.internal.unpipe(internal);
+                                if (connection.interface instanceof BaudotInterface_1.default) {
+                                    connection.interface.sendEnd();
+                                    setTimeout(() => {
+                                        connection.interface.end();
+                                        connection.socket.end();
+                                    }, 2000);
+                                }
+                                else {
                                     connection.interface.end();
                                     connection.socket.end();
-                                }, 2000);
+                                }
+                                resolve();
                             }
-                            else {
-                                connection.interface.end();
-                                connection.socket.end();
-                            }
-                            resolve();
+                            let timeout = setTimeout(() => {
+                                internal.write('timeout\r\n');
+                                close();
+                            }, 10000);
+                            confirm_1.default(connection.interface.internal, internal, timeout)
+                                .then(() => {
+                                internal.write('\r\n');
+                                close();
+                            })
+                                .catch(err => {
+                                logging_1.logger.log(logging_1.inspect `error: ${err}`);
+                                internal.write('error\r\n');
+                                close();
+                            });
                         }
                     }))
                         .then(() => {
+                        logging_1.logger.log("confirmed all peers");
                         internal.write('\r\nconfirmed all peers\r\n\r\n');
                         if (client.interface instanceof BaudotInterface_1.default) {
                             client.interface.sendEnd();
@@ -149,7 +170,7 @@ let uiConfig = {
                             client.socket.end();
                         }
                     })
-                        .catch(err => logging_1.logger.log(logging_1.inspect `error: ${err}`));
+                        .catch(err => logging_1.logger.log(logging_1.inspect `confirmation error: ${err}`));
                 });
             });
             output.pipe(internal);

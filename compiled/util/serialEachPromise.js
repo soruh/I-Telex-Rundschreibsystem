@@ -28,11 +28,16 @@ function serialEachPromise(iterable, promiseFunction) {
         let results = [];
         for (let key in iterable) {
             try {
+                // tslint:disable-next-line:max-line-length
+                // logger.log('silly', inspect`starting promiseFunction ${promiseFunction.name?promiseFunction.name+" ":""}called with key: ${key} value: ${iterable[key]} `);
                 results.push(yield promiseFunction(iterable[key], key));
+                // tslint:disable-next-line:max-line-length
+                // logger.log('silly', inspect`finished promiseFunction ${promiseFunction.name?promiseFunction.name+" ":""}called with key: ${key} value: ${iterable[key]} returned: ${results[results.length]}`);
             }
             catch (e) {
-                if (e)
-                    logging_1.logger.log('error: ' + logging_1.inspect `${e}`);
+                // tslint:disable-next-line:max-line-length
+                logging_1.logger.log('silly', logging_1.inspect `error in promiseFunction ${promiseFunction.name ? promiseFunction.name + " " : ""} called with key: ${key} value: ${iterable[key]}`);
+                logging_1.logger.log('error', logging_1.inspect `${e}`);
             }
         }
         return results;
