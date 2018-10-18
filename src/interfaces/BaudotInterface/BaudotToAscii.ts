@@ -1,8 +1,9 @@
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").slice(-1)[0]];while(mod.parent){mod=mod.parent;loadOrder.push(mod.filename.split("/").slice(-1)[0]);}loadOrder=loadOrder.map((name,index)=>{let color="\x1b[33m";if(index==0)color="\x1b[32m";if(index==loadOrder.length-1)color="\x1b[36m";return(`${color}${name}\x1b[0m`);}).reverse();console.log(loadOrder.join(" → "));}
+
 import { Transform } from "stream";
 import { baudotModeUnknown, asciify } from "../../util/baudot";
+import { logger } from "../../util/logging";
 
 class BaudotToAscii extends Transform {
 	public baudotMode = baudotModeUnknown;
@@ -14,7 +15,7 @@ class BaudotToAscii extends Transform {
 		callback(null, ascii);
 	}
 	public setMode(baudotMode){
-		// logger.log('debug',`BaudotToAscii setMode to ${baudotMode.toString()}`);
+		// logger.log(`BaudotToAscii setMode to ${baudotMode.toString()}`);
 		if(baudotMode !== this.baudotMode){
 			this.baudotMode = baudotMode;
 			this.emit("modeChange", baudotMode);

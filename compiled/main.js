@@ -1,19 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if (module.parent != null) {
-    let mod = module;
-    let loadOrder = [mod.filename.split("/").slice(-1)[0]];
-    while (mod.parent) {
-        mod = mod.parent;
-        loadOrder.push(mod.filename.split("/").slice(-1)[0]);
-    }
-    loadOrder = loadOrder.map((name, index) => { let color = "\x1b[33m"; if (index == 0)
-        color = "\x1b[32m"; if (index == loadOrder.length - 1)
-        color = "\x1b[36m"; return (`${color}${name}\x1b[0m`); }).reverse();
-    console.log(loadOrder.join(" → "));
-}
+Object.defineProperty(exports, "__esModule", { value: true });
 const readline = require("readline");
 const net = require("net");
 const UI_1 = require("./ui/UI");
@@ -37,6 +25,8 @@ server.on('connection', socket => {
     });
     // interFace.on('timeout', (ext:number)=>{
     // });
+    // tslint:disable-next-line:no-unused-expression
+    new logging_1.logStream('calling client', interFace.internal);
     const rl = readline.createInterface({
         input: interFace.internal,
         output: interFace.internal,

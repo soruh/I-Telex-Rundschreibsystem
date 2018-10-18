@@ -10,18 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if (module.parent != null) {
-    let mod = module;
-    let loadOrder = [mod.filename.split("/").slice(-1)[0]];
-    while (mod.parent) {
-        mod = mod.parent;
-        loadOrder.push(mod.filename.split("/").slice(-1)[0]);
-    }
-    loadOrder = loadOrder.map((name, index) => { let color = "\x1b[33m"; if (index == 0)
-        color = "\x1b[32m"; if (index == loadOrder.length - 1)
-        color = "\x1b[36m"; return (`${color}${name}\x1b[0m`); }).reverse();
-    console.log(loadOrder.join(" → "));
-}
 const stream_1 = require("stream");
 const net_1 = require("net");
 const util = require("util");
@@ -34,7 +22,7 @@ const serialEachPromise_1 = require("./util/serialEachPromise");
 const config_1 = require("./config");
 function callGroup(group, callback) {
     let output = new stream_1.PassThrough();
-    serialEachPromise_1.default(group, (number, key) => new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+    serialEachPromise_1.default(group, (number, index) => new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
         output.write(`calling: ${number}\r\n`);
         let peer = yield ITelexServerCom_1.peerQuery(number);
         let interFace;
@@ -57,6 +45,10 @@ function callGroup(group, callback) {
             }
             output.write(`${config_1.DELIMITER}\r\n`);
             if (interFace) {
+                if (interFace instanceof BaudotInterface_1.default)
+                    interFace.asciifier.on('modeChange', (newMode) => {
+                        logging_1.logger.log(logging_1.inspect `new called client mode: ${newMode}`);
+                    });
                 // output.write('valid client type\r\n');
                 let socket = new net_1.Socket();
                 socket.pipe(interFace.external);
@@ -72,17 +64,18 @@ function callGroup(group, callback) {
                         logging_1.logger.log('calling: ' + peer.extension);
                         interFace.call(peer.extension);
                     }
-                    confirm_1.default(interFace.internal, output, timeout)
+                    confirm_1.default(interFace.internal, output, timeout, +index)
                         .then(() => {
-                        output.write('\r\n');
+                        // output.write('\r\n');
                         interFace.internal.unpipe(output);
+                        // if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
                         let connection = {
                             socket,
                             name: peer.name,
                             number: peer.number,
                             interface: interFace,
                         };
-                        output.write(`${config_1.DELIMITER}\r\n`);
+                        output.write(`\r\n${config_1.DELIMITER}\r\n`);
                         resolve(connection);
                     })
                         .catch(err => logging_1.logger.log(logging_1.inspect `error: ${err}`));

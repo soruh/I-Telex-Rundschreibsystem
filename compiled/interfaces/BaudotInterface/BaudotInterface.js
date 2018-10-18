@@ -1,19 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if (module.parent != null) {
-    let mod = module;
-    let loadOrder = [mod.filename.split("/").slice(-1)[0]];
-    while (mod.parent) {
-        mod = mod.parent;
-        loadOrder.push(mod.filename.split("/").slice(-1)[0]);
-    }
-    loadOrder = loadOrder.map((name, index) => { let color = "\x1b[33m"; if (index == 0)
-        color = "\x1b[32m"; if (index == loadOrder.length - 1)
-        color = "\x1b[36m"; return (`${color}${name}\x1b[0m`); }).reverse();
-    console.log(loadOrder.join(" → "));
-}
+Object.defineProperty(exports, "__esModule", { value: true });
 const baudot_1 = require("../../util/baudot");
 const util = require("util"); // TODO remove?
 const logging_1 = require("../../util/logging");
@@ -70,13 +58,11 @@ class BaudotInterface extends Interface_1.default {
         this.baudotTimeout = setTimeout(() => this.onTimeout(), 30 * 1000);
         this.pulse = setInterval(() => this.sendHeatbeat(), this.pulseRate);
         this.asciifier.on('modeChange', (mode) => {
-            if (logDebug)
-                logging_1.logger.log(logging_1.inspect `asciifier modeChange to ${symbolName(mode)}`);
+            // if(logDebug) logger.log(inspect`asciifier modeChange to ${symbolName(mode)}`);
             this.baudotifier.setMode(mode);
         });
         this.baudotifier.on('modeChange', (mode) => {
-            if (logDebug)
-                logging_1.logger.log(logging_1.inspect `baudotifier modeChange to ${symbolName(mode)}`);
+            // if(logDebug) logger.log(inspect`baudotifier modeChange to ${symbolName(mode)}`);
             this.asciifier.setMode(mode);
         });
         this.baudotifier.on("data", (data) => {
@@ -177,7 +163,7 @@ class BaudotInterface extends Interface_1.default {
             let data = this.writeBuffer.slice(0, this.bytesSendable);
             this.writeBuffer = this.writeBuffer.slice(this.bytesSendable);
             this.packager.write(data);
-            // if(logDebug)  logger.log(inspect`sent ${data.length} bytes`);
+            // if(logDebug) logger.log(inspect`sent ${data.length} bytes`);
             this.bytesSent = (this.bytesSent + data.length) % 0x100;
             this.drained = false;
             this.emit("send", data);
@@ -232,6 +218,8 @@ class BaudotInterface extends Interface_1.default {
                 this.sendBuffered();
                 if (this.bytesUnacknowleged === 0 && this.writeBuffer.length === 0 && this.drained === false) {
                     this.drained = true;
+                    if (logDebug)
+                        logging_1.logger.log('drained');
                     this.emit("drain");
                 }
                 break;

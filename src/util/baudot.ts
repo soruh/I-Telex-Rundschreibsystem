@@ -1,6 +1,9 @@
+import { logger, inspect } from "./logging";
+import * as util from "util";
+
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").slice(-1)[0]];while(mod.parent){mod=mod.parent;loadOrder.push(mod.filename.split("/").slice(-1)[0]);}loadOrder=loadOrder.map((name,index)=>{let color="\x1b[33m";if(index==0)color="\x1b[32m";if(index==loadOrder.length-1)color="\x1b[36m";return(`${color}${name}\x1b[0m`);}).reverse();console.log(loadOrder.join(" → "));}
+
 
 
 // import * as util from "util";
@@ -22,95 +25,99 @@ const baudotModeBu = Symbol("bu");
 const baudotModeUnknown = Symbol("unknown");
 
 function baudotify(str: string, baudotMode:symbol=baudotModeUnknown):[number[], symbol]{
-  // logger.log("mode: "+baudotMode.toString());
-  // logger.log("baudotifying: "+util.inspect(str));
-  
-  let baudot = [];
-  for (let char of str.toLowerCase()) {
+	// logger.log(inspect`${'>'.repeat(80)}\nbaudotifying ${util.inspect(str)} in mode ${baudotMode}`);
+
 	// logger.log("mode: "+baudotMode.toString());
-	let baudotCodeZi = baudotZi.indexOf(char);
-	let baudotCodeBu = baudotBu.indexOf(char);
-
-	// logger.log("char: "+util.inspect(char));
-	// logger.log("baudotCodeZi: "+baudotCodeZi);
-	// logger.log("baudotCodeBu: "+baudotCodeBu);
+	// logger.log("baudotifying: "+util.inspect(str));
 	
-	if(baudotCodeZi>-1&&baudotCodeBu>-1){
-	  if(baudotMode===baudotModeBu){
-		baudot.push(baudotCodeBu);
-		continue;
-	  }
-	  if(baudotMode===baudotModeZi){
-		baudot.push(baudotCodeZi);
-		continue;
-	  }
-	  baudotMode = baudotModeBu;
-	  baudot.push(changeModeBu);
-	  baudot.push(baudotCodeBu);
-	  continue;
-	}
+	let baudot = [];
+	for (let char of str.toLowerCase()) {
+		// logger.log("mode: "+baudotMode.toString());
+		let baudotCodeZi = baudotZi.indexOf(char);
+		let baudotCodeBu = baudotBu.indexOf(char);
 
-	if (baudotCodeZi > -1) {
-	  if (baudotMode !== baudotModeZi) {
-		baudot.push(changeModeZi);
-		baudotMode = baudotModeZi;
-	  }
-	  baudot.push(baudotCodeZi);
-	  continue;
-	}
+		// logger.log("char: "+util.inspect(char));
+		// logger.log("baudotCodeZi: "+baudotCodeZi);
+		// logger.log("baudotCodeBu: "+baudotCodeBu);
+		
+		if(baudotCodeZi>-1&&baudotCodeBu>-1){
+			if(baudotMode===baudotModeBu){
+				baudot.push(baudotCodeBu);
+				continue;
+			}
+			if(baudotMode===baudotModeZi){
+				baudot.push(baudotCodeZi);
+				continue;
+			}
+			baudotMode = baudotModeBu;
+			baudot.push(changeModeBu);
+			baudot.push(baudotCodeBu);
+			continue;
+		}
 
-	if (baudotCodeBu > -1) {
-	  if (baudotMode !== baudotModeBu) {
-		baudot.push(changeModeBu);
-		baudotMode = baudotModeBu;
-	  }
-	  baudot.push(baudotCodeBu);
-	  continue;
+		if (baudotCodeZi > -1) {
+			if (baudotMode !== baudotModeZi) {
+				baudot.push(changeModeZi);
+				baudotMode = baudotModeZi;
+			}
+			baudot.push(baudotCodeZi);
+			continue;
+		}
+
+		if (baudotCodeBu > -1) {
+			if (baudotMode !== baudotModeBu) {
+				baudot.push(changeModeBu);
+				baudotMode = baudotModeBu;
+			}
+			baudot.push(baudotCodeBu);
+			continue;
+		}
+		
+		baudot.push(invalidAsciiChar);
 	}
+	// logger.log("baudotified: ",baudot);
+	// logger.log("mode: "+baudotMode.toString());
 	
-	baudot.push(invalidAsciiChar);
-  }
-  // logger.log("baudotified: ",baudot);
-  // logger.log("mode: "+baudotMode.toString());
-  return [baudot, baudotMode];
+	// logger.log(inspect`new mode ${baudotMode}\n${'<'.repeat(80)}`);
+	return [baudot, baudotMode];
 }
 
 function asciify(data:Buffer, baudotMode:symbol=baudotModeUnknown): [string, symbol] {
-  let ascii = "";
-  // logger.log("mode: "+baudotMode.toString());
-  // logger.log("asciifying: ", data);
-  
-  for (let char of Array.from(data)) {
-	if (char === changeModeZi) {
-	  baudotMode = baudotModeZi;
-	  continue;
-	}
-	if (char === changeModeBu) {
-	  baudotMode = baudotModeBu;
-	  continue;
-	}
+	let ascii = "";
+	// logger.log("mode: "+baudotMode.toString());
+	// logger.log("asciifying: ", data);
 	
-	if (baudotMode === baudotModeBu) {
-		ascii += baudotBu[char]||unknownBaudotChar;
-		continue;
+	for (let char of Array.from(data)) {
+		if (char === changeModeZi) {
+			baudotMode = baudotModeZi;
+			continue;
+		}
+		if (char === changeModeBu) {
+			baudotMode = baudotModeBu;
+			continue;
+		}
+		
+		if (baudotMode === baudotModeBu) {
+			ascii += baudotBu[char]||unknownBaudotChar;
+			continue;
+		}
+		if (baudotMode === baudotModeZi) {
+			ascii += baudotZi[char]||unknownBaudotChar;
+			continue;
+		}
+		ascii += unknownBaudotChar;
 	}
-	if (baudotMode === baudotModeZi) {
-		ascii += baudotZi[char]||unknownBaudotChar;
-		continue;
-	}
-	ascii += unknownBaudotChar;
-  }
-  // logger.log("asciified: "+ascii);
-  // logger.log("mode: "+baudotMode.toString());
-  return [ascii, baudotMode];
+	// logger.log("asciified: "+ascii);
+	// logger.log("mode: "+baudotMode.toString());
+	return [ascii, baudotMode];
 }
 
 export {
-  baudotify,
-  asciify,
-  baudotModeZi,
-  baudotModeBu,
-  baudotModeUnknown,
-  changeModeZi,
-  changeModeBu,
+	baudotify,
+	asciify,
+	baudotModeZi,
+	baudotModeBu,
+	baudotModeUnknown,
+	changeModeZi,
+	changeModeBu,
 };

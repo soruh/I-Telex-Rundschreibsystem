@@ -1,19 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if (module.parent != null) {
-    let mod = module;
-    let loadOrder = [mod.filename.split("/").slice(-1)[0]];
-    while (mod.parent) {
-        mod = mod.parent;
-        loadOrder.push(mod.filename.split("/").slice(-1)[0]);
-    }
-    loadOrder = loadOrder.map((name, index) => { let color = "\x1b[33m"; if (index == 0)
-        color = "\x1b[32m"; if (index == loadOrder.length - 1)
-        color = "\x1b[36m"; return (`${color}${name}\x1b[0m`); }).reverse();
-    console.log(loadOrder.join(" → "));
-}
+Object.defineProperty(exports, "__esModule", { value: true });
 const callGroup_1 = require("../callGroup");
 const CallEndDetector_1 = require("./CallEndDetector");
 const serialEachPromise_1 = require("../util/serialEachPromise");
@@ -108,7 +96,10 @@ let uiConfig = {
                         internal.pipe(connection.interface.internal);
                     }
                     internal.write(`\r\n\nStopped transmitting message\r\n`);
+                    logging_1.logger.log("message ended");
+                    // logger.log(connections);
                     serialEachPromise_1.default(connections, (connection, index) => new Promise((resolve, reject) => {
+                        logging_1.logger.log(`confirming: ${connection.number} (${connection.name})`);
                         internal.write(`confirming: ${connection.number} (${connection.name})\r\n`);
                         internal.write(`${config_1.DELIMITER}\r\n`);
                         if (connection.interface.drained !== false) {
@@ -117,8 +108,9 @@ let uiConfig = {
                             confirmClient();
                         }
                         else {
+                            logging_1.logger.log("wasn't already drained");
                             connection.interface.once('drain', () => {
-                                logging_1.logger.log('drained');
+                                logging_1.logger.log('is now drained');
                                 confirmClient();
                             });
                         }
@@ -143,7 +135,7 @@ let uiConfig = {
                                 internal.write('timeout\r\n');
                                 close();
                             }, 10000);
-                            confirm_1.default(connection.interface.internal, internal, timeout)
+                            confirm_1.default(connection.interface.internal, internal, timeout, +index)
                                 .then(() => {
                                 internal.write('\r\n');
                                 close();

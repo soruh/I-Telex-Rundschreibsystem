@@ -1,19 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if (module.parent != null) {
-    let mod = module;
-    let loadOrder = [mod.filename.split("/").slice(-1)[0]];
-    while (mod.parent) {
-        mod = mod.parent;
-        loadOrder.push(mod.filename.split("/").slice(-1)[0]);
-    }
-    loadOrder = loadOrder.map((name, index) => { let color = "\x1b[33m"; if (index == 0)
-        color = "\x1b[32m"; if (index == loadOrder.length - 1)
-        color = "\x1b[36m"; return (`${color}${name}\x1b[0m`); }).reverse();
-    console.log(loadOrder.join(" → "));
-}
+Object.defineProperty(exports, "__esModule", { value: true });
 const colors_1 = require("./colors");
 const util = require("util");
 const disableColors = false;
@@ -50,8 +38,20 @@ function inspect(substrings, ...values) {
     return combined.join('');
 }
 exports.inspect = inspect;
-const logger = { log: (...args) => {
-        process.stdout.write(new Date().toJSON() + ' ');
-        console.log.apply(null, args);
-    } }; // TODO implement winston;
+class logStream {
+    constructor(name, stream) {
+        this.stream = stream;
+        this.name = name;
+        this.logger = (text) => {
+            logger.log(inspect `${name}: ${util.inspect(text.toString())}`);
+        };
+        this.stream.on('data', this.logger);
+    }
+    end() {
+        logger.log(`stopped logging for ${this.name}`);
+        this.stream.removeListener('data', this.logger);
+    }
+}
+exports.logStream = logStream;
+const logger = console; // TODO implement winston;
 exports.logger = logger;

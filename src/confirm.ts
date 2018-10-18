@@ -1,19 +1,24 @@
 import { Duplex } from "stream";
-import { logger } from "./util/logging";
+import { logger, logStream } from "./util/logging";
 
-function confirm(socket:Duplex, output:Duplex, timeout:NodeJS.Timer){
+function confirm(socket:Duplex, output:Duplex, timeout:NodeJS.Timer, n:number){
 return new Promise((resolve, reject)=>{
+	logger.log(`confirming client ${n}`);
+	let loggingStream = new logStream('called client', socket);
+
 	socket.write('@');
 
-
 	function end(Resolve:boolean){
-		logger.log('called "end"');
+		loggingStream.end();
+		logger.log(`${Resolve?'confirmed':'failed to confirm'} client ${n}`);
 
 		socket.removeAllListeners('close');
+		socket.removeAllListeners('data');
 		socket.unpipe(output);
 
 		clearInterval(timeoutCheckInterval);
 		clearTimeout(timeout);
+		clearTimeout(resolveTimeout);
 
 		if(Resolve){
 			resolve();

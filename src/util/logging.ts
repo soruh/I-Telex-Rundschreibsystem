@@ -1,9 +1,10 @@
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").slice(-1)[0]];while(mod.parent){mod=mod.parent;loadOrder.push(mod.filename.split("/").slice(-1)[0]);}loadOrder=loadOrder.map((name,index)=>{let color="\x1b[33m";if(index==0)color="\x1b[32m";if(index==loadOrder.length-1)color="\x1b[36m";return(`${color}${name}\x1b[0m`);}).reverse();console.log(loadOrder.join(" → "));}
+
 
 import colors from "./colors";
 import * as util from "util";
+import { Stream } from "stream";
 
 const disableColors = false;
 
@@ -36,12 +37,28 @@ function inspect(substrings: TemplateStringsArray, ...values: any[]): string {
 	return combined.join('');
 }
 
-const logger = {log:(...args)=>{
-	process.stdout.write(new Date().toJSON()+' ');
-	(console as any).log.apply(null, args);
-}}; // TODO implement winston;
+class logStream {
+	private stream;
+	private logger;
+	private name;
+	constructor(name:string, stream:Stream){
+		this.stream = stream;
+		this.name = name;
+		this.logger = (text:Buffer)=>{
+			logger.log(inspect`${name}: ${util.inspect(text.toString())}`);
+		};
+		this.stream.on('data', this.logger);
+	}
+	public end(){
+		logger.log(`stopped logging for ${this.name}`);
+		this.stream.removeListener('data', this.logger);
+	}
+}
+
+const logger = console; // TODO implement winston;
 
 export {
 	inspect,
 	logger,
+	logStream
 };

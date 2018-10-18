@@ -1,19 +1,19 @@
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").slice(-1)[0]];while(mod.parent){mod=mod.parent;loadOrder.push(mod.filename.split("/").slice(-1)[0]);}loadOrder=loadOrder.map((name,index)=>{let color="\x1b[33m";if(index==0)color="\x1b[32m";if(index==loadOrder.length-1)color="\x1b[36m";return(`${color}${name}\x1b[0m`);}).reverse();console.log(loadOrder.join(" → "));}
+
 
 import * as readline from "readline";
 import * as net from "net";
 import UI from "./ui/UI";
 import uiConfig from "./ui/UIConfig";
-import { logger, inspect } from "./util/logging";
+import { logger, inspect, logStream } from "./util/logging";
 import { Client } from "./ui/UITypes";
 import AsciiInterface from "./interfaces/AsciiInterface/AsciiInterface";
 import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 
 declare global {
 	interface Buffer {
-		readNullTermString: (string?, start?, end?) => string;
+		readNullTermString: (encoding?, start?, end?) => string;
 	}
 }
 Buffer.prototype.readNullTermString = 
@@ -36,9 +36,17 @@ server.on('connection', socket=>{
 		socket.end();
 	});
 
+	socket.on('error',err=>{
+		logger.log('error', err);
+		socket.end();
+	});
+
 	// interFace.on('timeout', (ext:number)=>{
 		
 	// });
+
+	// tslint:disable-next-line:no-unused-expression
+	new logStream('calling client', interFace.internal);
 
 	const rl = readline.createInterface({
 		input:interFace.internal,

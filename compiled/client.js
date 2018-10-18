@@ -4,6 +4,12 @@ const net_1 = require("net");
 const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface");
 const logging_1 = require("./util/logging");
 const stream_1 = require("stream");
+Buffer.prototype.readNullTermString =
+    function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
+        let firstZero = this.indexOf(0, start);
+        let stop = firstZero >= start && firstZero <= end ? firstZero : end;
+        return this.toString(encoding, start, stop);
+    };
 // tslint:disable-next-line:no-string-throw
 if (!process.argv[2] || !process.argv[3])
     throw ('USAGE:\nnode client.js host port');
@@ -31,7 +37,7 @@ process.stdin
     .pipe(new noAutoCr())
     .pipe(process.stdout);
 socket.connect({ host: process.argv[2], port: parseInt(process.argv[3]) });
-baudotInterface.call(null);
+baudotInterface.call('44');
 baudotInterface.on('end', () => {
     socket.end();
     process.exit();

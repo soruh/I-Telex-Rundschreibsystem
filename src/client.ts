@@ -4,6 +4,13 @@ import { logger } from "./util/logging";
 import { Transform } from "stream";
 
 
+Buffer.prototype.readNullTermString = 
+function readNullTermString(encoding: string = "utf8", start: number = 0, end: number = this.length):string {
+	let firstZero = this.indexOf(0, start);
+	let stop = firstZero >= start && firstZero <= end ? firstZero : end;
+	return this.toString(encoding, start, stop);
+};
+
 // tslint:disable-next-line:no-string-throw
 if(!process.argv[2]||!process.argv[3]) throw('USAGE:\nnode client.js host port');
 
@@ -38,7 +45,7 @@ process.stdin
 	.pipe(process.stdout);
 
 socket.connect({host:process.argv[2], port:parseInt(process.argv[3])});
-baudotInterface.call(null);
+baudotInterface.call('44');
 
 baudotInterface.on('end', ()=>{
 	socket.end();

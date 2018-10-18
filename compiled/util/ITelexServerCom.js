@@ -1,19 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if (module.parent != null) {
-    let mod = module;
-    let loadOrder = [mod.filename.split("/").slice(-1)[0]];
-    while (mod.parent) {
-        mod = mod.parent;
-        loadOrder.push(mod.filename.split("/").slice(-1)[0]);
-    }
-    loadOrder = loadOrder.map((name, index) => { let color = "\x1b[33m"; if (index == 0)
-        color = "\x1b[32m"; if (index == loadOrder.length - 1)
-        color = "\x1b[36m"; return (`${color}${name}\x1b[0m`); }).reverse();
-    console.log(loadOrder.join(" → "));
-}
+Object.defineProperty(exports, "__esModule", { value: true });
 //#region imports
 const ip = require("ip");
 const net = require("net");
@@ -111,7 +99,7 @@ Buffer.prototype.readNullTermString =
 // 	return str;
 // }
 function encPackage(pkg) {
-    // logger.log('iTelexCom', inspect`encoding package : ${pkg}`);
+    // logger.log(inspect`encoding package : ${pkg}`);
     if (pkg.datalength == null) {
         if (pkg.type === 255) {
             if (pkg.data.message != null)
@@ -194,7 +182,7 @@ function encPackage(pkg) {
             buffer.write(pkg.data.message || "", 2, pkg.datalength);
             break;
     }
-    // logger.log('iTelexCom', inspect`encoded: ${buffer}`);
+    // logger.log(inspect`encoded: ${buffer}`);
     return buffer;
 }
 exports.encPackage = encPackage;
@@ -204,7 +192,7 @@ function decPackage(buffer) {
         datalength: buffer[1],
         data: null,
     };
-    // logger.log('iTelexCom', inspect`decoding package: ${buffer}`);
+    // logger.log(inspect`decoding package: ${buffer}`);
     switch (pkg.type) {
         case 1:
             pkg.data = {
@@ -310,7 +298,7 @@ function decPackage(buffer) {
             };
             break;
         default:
-            // logger.log('warning', inspect`recieved a package of invalid/unsupported type: ${(<any>pkg).type}`);
+            // logger.log(inspect`recieved a package of invalid/unsupported type: ${(<any>pkg).type}`);
             return null;
     }
     return pkg;
@@ -319,7 +307,7 @@ exports.decPackage = decPackage;
 function decPackages(buffer) {
     if (!(buffer instanceof Buffer))
         buffer = Buffer.from(buffer);
-    // logger.log('iTelexCom', inspect`decoding data: ${buffer}`);
+    // logger.log(inspect`decoding data: ${buffer}`);
     let out = [];
     let type;
     let datalength;
@@ -327,12 +315,12 @@ function decPackages(buffer) {
         type = +buffer[typepos];
         datalength = +buffer[typepos + 1];
         if (type in constants.PackageSizes && constants.PackageSizes[type] !== datalength) {
-            // logger.log('warning', inspect`size missmatch: ${constants.PackageSizes[type]} != ${datalength}`);
+            // logger.log(inspect`size missmatch: ${constants.PackageSizes[type]} != ${datalength}`);
             if (true) {
-                // logger.log('warning', inspect`using package of invalid size!`);
+                // logger.log(inspect`using package of invalid size!`);
             }
             else {
-                // logger.log('debug', inspect`ignoring package, because it is of invalid size!`);
+                // logger.log( inspect`ignoring package, because it is of invalid size!`);
                 continue;
             }
         }
@@ -340,11 +328,11 @@ function decPackages(buffer) {
         if (pkg)
             out.push(pkg);
     }
-    // logger.log('iTelexCom', inspect`decoded: ${out}`);
+    // logger.log(inspect`decoded: ${out}`);
     return out;
 }
 exports.decPackages = decPackages;
-const TlnServer = { host: "telexgateway.de", port: 11811 };
+const TlnServer = { host: "localhost", port: 11811 };
 function peerQuery(number) {
     return new Promise((resolve, reject) => {
         let socket = new net.Socket();

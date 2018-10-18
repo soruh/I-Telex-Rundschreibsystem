@@ -1,13 +1,13 @@
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").slice(-1)[0]];while(mod.parent){mod=mod.parent;loadOrder.push(mod.filename.split("/").slice(-1)[0]);}loadOrder=loadOrder.map((name,index)=>{let color="\x1b[33m";if(index==0)color="\x1b[32m";if(index==loadOrder.length-1)color="\x1b[36m";return(`${color}${name}\x1b[0m`);}).reverse();console.log(loadOrder.join(" → "));}
+
 
 import { UIConfig } from "./UITypes";
 import callGroup from "../callGroup";
 import CallEndDetector from "./CallEndDetector";
 import serialEachPromise from "../util/serialEachPromise";
 import BaudotInterface from "../interfaces/BaudotInterface/BaudotInterface";
-import { logger, inspect } from "../util/logging";
+import { logger, inspect, logStream } from "../util/logging";
 import confirm from "../confirm";
 import { DELIMITER } from "../config";
 
@@ -96,7 +96,12 @@ let uiConfig:UIConfig = {
 					}
 					internal.write(`\r\n\nStopped transmitting message\r\n`);
 
+					logger.log("message ended");
+					// logger.log(connections);
+
 					serialEachPromise(connections, (connection, index)=>new Promise((resolve, reject)=>{
+						logger.log(`confirming: ${connection.number} (${connection.name})`);
+
 						internal.write(`confirming: ${connection.number} (${connection.name})\r\n`);
 						internal.write(`${DELIMITER}\r\n`);
 
@@ -107,8 +112,9 @@ let uiConfig:UIConfig = {
 							confirmClient();
 							
 						}else{
+							logger.log("wasn't already drained");
 							connection.interface.once('drain', ()=>{
-								logger.log('drained');
+								logger.log('is now drained');
 
 								confirmClient();
 							});
@@ -138,7 +144,7 @@ let uiConfig:UIConfig = {
 								close();
 							}, 10000);
 
-							confirm(connection.interface.internal, internal, timeout)
+							confirm(connection.interface.internal, internal, timeout, +index)
 							.then(()=>{
 								internal.write('\r\n');
 								close();

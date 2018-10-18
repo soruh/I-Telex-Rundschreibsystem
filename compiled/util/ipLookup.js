@@ -1,4 +1,6 @@
 "use strict";
+// @ts-ignore
+// tslint:disable-next-line:max-line-length no-console triple-equals
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -8,20 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
-if (module.parent != null) {
-    let mod = module;
-    let loadOrder = [mod.filename.split("/").slice(-1)[0]];
-    while (mod.parent) {
-        mod = mod.parent;
-        loadOrder.push(mod.filename.split("/").slice(-1)[0]);
-    }
-    loadOrder = loadOrder.map((name, index) => { let color = "\x1b[33m"; if (index == 0)
-        color = "\x1b[32m"; if (index == loadOrder.length - 1)
-        color = "\x1b[36m"; return (`${color}${name}\x1b[0m`); }).reverse();
-    console.log(loadOrder.join(" → "));
-}
 const ITelexServerCom_1 = require("./ITelexServerCom");
 const dns_1 = require("dns");
 const util_1 = require("util");
@@ -33,7 +21,7 @@ function checkIp(ipAddress) {
         let ipPeers = [];
         for (let peer of peers) {
             if ((!peer.ipaddress) && peer.hostname) {
-                // logger.log('debug', inspect`hostname: ${peer.hostname}`)
+                // logger.log( inspect`hostname: ${peer.hostname}`)
                 try {
                     let { address, family } = yield util_1.promisify(dns_1.lookup)(peer.hostname);
                     if (address)
@@ -43,11 +31,11 @@ function checkIp(ipAddress) {
                         });
                 }
                 catch (e) {
-                    logging_1.logger.log('debug', logging_1.inspect `ip resolution failed: ${e}`);
+                    logging_1.logger.log(logging_1.inspect `ip resolution failed: ${e}`);
                 }
             }
             else if (peer.ipaddress && (ip_1.isV4Format(peer.ipaddress) || ip_1.isV6Format(peer.ipaddress))) {
-                // logger.log('debug', inspect`ip: ${peer.ipaddress}`);
+                // logger.log( inspect`ip: ${peer.ipaddress}`);
                 ipPeers.push({
                     peer,
                     ipaddress: peer.ipaddress,

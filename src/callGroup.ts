@@ -1,7 +1,7 @@
 "use strict";
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").slice(-1)[0]];while(mod.parent){mod=mod.parent;loadOrder.push(mod.filename.split("/").slice(-1)[0]);}loadOrder=loadOrder.map((name,index)=>{let color="\x1b[33m";if(index==0)color="\x1b[32m";if(index==loadOrder.length-1)color="\x1b[36m";return(`${color}${name}\x1b[0m`);}).reverse();console.log(loadOrder.join(" → "));}
+
 
 import { PassThrough } from "stream";
 import { Socket } from "net";
@@ -10,10 +10,11 @@ import { peerQuery } from "./util/ITelexServerCom";
 import Interface from "./interfaces/Interface";
 import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import AsciiInterface from "./interfaces/AsciiInterface/AsciiInterface";
-import { logger, inspect } from "./util/logging";
+import { logger, inspect, logStream } from "./util/logging";
 import confirm from "./confirm";
 import serialEachPromise from "./util/serialEachPromise";
 import { DELIMITER } from "./config";
+import { baudotModeUnknown } from "./util/baudot";
 
 interface Connection {
 	socket:Socket;
@@ -25,7 +26,7 @@ interface Connection {
 function callGroup(group:string[], callback:(connections:Connection[])=>void):PassThrough {
 	let output = new PassThrough();
 
-	serialEachPromise(group, (number, key)=>
+	serialEachPromise(group, (number, index)=>
 	new Promise(async (resolve, reject)=>{
 		output.write(`calling: ${number}\r\n`);
 
@@ -52,6 +53,9 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 
 			output.write(`${DELIMITER}\r\n`);
 			if(interFace){
+				if(interFace instanceof BaudotInterface) interFace.asciifier.on('modeChange', (newMode)=>{
+					logger.log(inspect`new called client mode: ${newMode}`);
+				});
 				// output.write('valid client type\r\n');
 
 				let socket = new Socket();
@@ -75,10 +79,12 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 						interFace.call(peer.extension);
 					}
 
-					confirm(interFace.internal, output, timeout)
+					confirm(interFace.internal, output, timeout, +index)
 					.then(()=>{
-						output.write('\r\n');
+						// output.write('\r\n');
 						interFace.internal.unpipe(output);
+
+						// if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
 
 						let connection:Connection = {
 							socket,
@@ -87,7 +93,7 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 							interface:interFace,
 						};
 
-						output.write(`${DELIMITER}\r\n`);
+						output.write(`\r\n${DELIMITER}\r\n`);
 						resolve(connection);
 					})
 					.catch(err=>logger.log(inspect`error: ${err}`));
@@ -112,7 +118,6 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 							interFace.end();
 
 							output.write(`${DELIMITER}\r\n`);
-							reject();
 							break;
 						default:
 							logger.log('unexpected error: '+err.code);
@@ -120,7 +125,9 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 				});
 
 				socket.on('error', (err)=>{
+					socket.end();
 					logger.log(inspect`socket error: ${err}`);
+					reject();
 				});
 
 				socket.connect({

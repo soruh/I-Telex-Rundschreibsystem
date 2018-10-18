@@ -1,6 +1,6 @@
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-if(module.parent!=null){let mod=module;let loadOrder=[mod.filename.split("/").slice(-1)[0]];while(mod.parent){mod=mod.parent;loadOrder.push(mod.filename.split("/").slice(-1)[0]);}loadOrder=loadOrder.map((name,index)=>{let color="\x1b[33m";if(index==0)color="\x1b[32m";if(index==loadOrder.length-1)color="\x1b[36m";return(`${color}${name}\x1b[0m`);}).reverse();console.log(loadOrder.join(" → "));}
+
 
 
 //#region imports
@@ -105,7 +105,7 @@ function readNullTermString(encoding: string = "utf8", start: number = 0, end: n
 
 
 function encPackage(pkg: Package_decoded): Buffer {
-	// logger.log('iTelexCom', inspect`encoding package : ${pkg}`);
+	// logger.log(inspect`encoding package : ${pkg}`);
 	
 	if (pkg.datalength == null){
 		if (pkg.type === 255){
@@ -186,7 +186,7 @@ function encPackage(pkg: Package_decoded): Buffer {
 			buffer.write(pkg.data.message || "", 2, pkg.datalength);
 			break;
 	}
-	// logger.log('iTelexCom', inspect`encoded: ${buffer}`);
+	// logger.log(inspect`encoded: ${buffer}`);
 	return buffer;
 }
 
@@ -197,7 +197,7 @@ function decPackage(buffer: Buffer): Package_decoded {
 		datalength: buffer[1] as any,
 		data: null,
 	};
-	// logger.log('iTelexCom', inspect`decoding package: ${buffer}`);
+	// logger.log(inspect`decoding package: ${buffer}`);
 	switch (pkg.type) {
 		case 1:
 			pkg.data = {
@@ -299,7 +299,7 @@ function decPackage(buffer: Buffer): Package_decoded {
 			};
 			break;
 		default:
-			// logger.log('warning', inspect`recieved a package of invalid/unsupported type: ${(<any>pkg).type}`);
+			// logger.log(inspect`recieved a package of invalid/unsupported type: ${(<any>pkg).type}`);
 			return null;
 	}
 	return pkg;
@@ -307,7 +307,7 @@ function decPackage(buffer: Buffer): Package_decoded {
 
 function decPackages(buffer: number[] | Buffer): Package_decoded[] {
 	if (!(buffer instanceof Buffer)) buffer = Buffer.from(buffer);
-	// logger.log('iTelexCom', inspect`decoding data: ${buffer}`);
+	// logger.log(inspect`decoding data: ${buffer}`);
 	let out: Package_decoded[] = [];
 
 	let type:number;
@@ -318,22 +318,22 @@ function decPackages(buffer: number[] | Buffer): Package_decoded[] {
 		datalength = +buffer[typepos + 1];
 		
 		if (type in constants.PackageSizes && constants.PackageSizes[type] !== datalength) {
-			// logger.log('warning', inspect`size missmatch: ${constants.PackageSizes[type]} != ${datalength}`);
+			// logger.log(inspect`size missmatch: ${constants.PackageSizes[type]} != ${datalength}`);
 			if (true) {
-				// logger.log('warning', inspect`using package of invalid size!`);
+				// logger.log(inspect`using package of invalid size!`);
 			} else {
-				// logger.log('debug', inspect`ignoring package, because it is of invalid size!`);
+				// logger.log( inspect`ignoring package, because it is of invalid size!`);
 				continue;
 			}
 		}
 		let pkg = decPackage(buffer.slice(typepos, typepos + datalength + 2));
 		if (pkg) out.push(pkg);
 	}
-	// logger.log('iTelexCom', inspect`decoded: ${out}`);
+	// logger.log(inspect`decoded: ${out}`);
 	return out;
 }
 
-const TlnServer = {host:"telexgateway.de", port:11811};
+const TlnServer = {host:"localhost", port:11811};
 
 function peerQuery(number):Promise<PackageData_decoded_5>{
 	return new Promise((resolve, reject)=>{
