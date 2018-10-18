@@ -1,7 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
+Object.defineProperty(exports, "__esModule", { value: true });
 // import * as util from "util";
 const unknownBaudotChar = "#";
 const invalidAsciiChar = 4;

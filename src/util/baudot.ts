@@ -1,5 +1,3 @@
-import { logger, inspect } from "./logging";
-import * as util from "util";
 
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
