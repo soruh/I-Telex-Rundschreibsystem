@@ -23,6 +23,10 @@ server.on('connection', socket => {
     interFace.on('end', () => {
         socket.end();
     });
+    socket.on('error', err => {
+        logging_1.logger.log('error', err);
+        socket.end();
+    });
     // interFace.on('timeout', (ext:number)=>{
     // });
     // tslint:disable-next-line:no-unused-expression

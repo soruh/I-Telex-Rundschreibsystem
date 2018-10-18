@@ -95,14 +95,15 @@ function callGroup(group, callback) {
                             output.write("\r\nderailed\r\n");
                             interFace.end();
                             output.write(`${config_1.DELIMITER}\r\n`);
-                            reject();
                             break;
                         default:
                             logging_1.logger.log('unexpected error: ' + err.code);
                     }
                 });
                 socket.on('error', (err) => {
+                    socket.end();
                     logging_1.logger.log(logging_1.inspect `socket error: ${err}`);
+                    reject();
                 });
                 socket.connect({
                     host: peer.hostname || peer.ipaddress,
