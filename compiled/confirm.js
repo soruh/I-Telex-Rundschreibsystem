@@ -1,14 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const logging_1 = require("./util/logging");
-function confirm(socket, output, timeout, n) {
+function confirm(socket, output, timeout, index) {
     return new Promise((resolve, reject) => {
-        logging_1.logger.log(`confirming client ${n}`);
-        let loggingStream = new logging_1.logStream('called client', socket);
+        logging_1.logger.log(`confirming client ${index}`);
+        let loggingStream = new logging_1.logStream(logging_1.inspect `called client ${index}`, socket);
         socket.write('@');
         function end(Resolve) {
             loggingStream.end();
-            logging_1.logger.log(`${Resolve ? 'confirmed' : 'failed to confirm'} client ${n}`);
+            logging_1.logger.log(`${Resolve ? 'confirmed' : 'failed to confirm'} client ${index}`);
             socket.removeAllListeners('close');
             socket.removeAllListeners('data');
             socket.unpipe(output);

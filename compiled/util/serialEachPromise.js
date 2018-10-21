@@ -25,7 +25,7 @@ function serialEachPromise(iterable, promiseFunction) {
             catch (e) {
                 // tslint:disable-next-line:max-line-length
                 logging_1.logger.log(logging_1.inspect `error in promiseFunction ${promiseFunction.name ? promiseFunction.name + " " : ""} called with key: ${key} value: ${iterable[key]}`);
-                logging_1.logger.log(logging_1.inspect `${e}`);
+                logging_1.logger.log(logging_1.inspect `Error: ${e}`);
             }
         }
         return results;

@@ -14,7 +14,8 @@ import { logger, inspect, logStream } from "./util/logging";
 import confirm from "./confirm";
 import serialEachPromise from "./util/serialEachPromise";
 import { DELIMITER } from "./config";
-import { baudotModeUnknown } from "./util/baudot";
+import { isBlacklisted } from "./blacklist";
+import { PackageData_decoded_5 } from "./util/ITelexServerComTypes";
 
 interface Connection {
 	socket:Socket;
@@ -30,7 +31,12 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 	new Promise(async (resolve, reject)=>{
 		output.write(`calling: ${number}\r\n`);
 
-		let peer = await peerQuery(number);
+		let peer:PackageData_decoded_5;
+		try{
+			peer = await peerQuery(number);
+		}catch(err){
+			logger.log(`Error in peerQuery:\r\n${err}`);
+		}
 		
 		let interFace:Interface;
 		if(peer){
@@ -47,98 +53,108 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 					break;
 				case 6:
 				default:
-					output.write("invalid client type\r\n");
-					reject();
+					output.write("invalid client type\r\n\n");
+					reject('invalid type');
+					return;
+			}
+
+			if(isBlacklisted(number)){
+				output.write(`${peer.name}(${peer.number}) has been blacklisted\r\n\n`);
+				reject('blacklisted');
+				return;
 			}
 
 			output.write(`${DELIMITER}\r\n`);
-			if(interFace){
-				if(interFace instanceof BaudotInterface) interFace.asciifier.on('modeChange', (newMode)=>{
+
+			if(interFace instanceof BaudotInterface){
+				interFace.asciifier.on('modeChange', (newMode)=>{
 					logger.log(inspect`new called client mode: ${newMode}`);
 				});
-				// output.write('valid client type\r\n');
-
-				let socket = new Socket();
-
-				socket.pipe(interFace.external);
-				interFace.external.pipe(socket);
-
-	
-				let timeout = setTimeout(()=>{
-					output.write("timeout\r\n");
-					interFace.end();
-
-					output.write(`${DELIMITER}\r\n`);
-					reject();
-				}, 10000);
-
-				socket.on('connect', ()=>{
-
-					if(!(interFace instanceof AsciiInterface&&peer.extension === null)){
-						logger.log('calling: '+peer.extension);
-						interFace.call(peer.extension);
-					}
-
-					confirm(interFace.internal, output, timeout, +index)
-					.then(()=>{
-						// output.write('\r\n');
-						interFace.internal.unpipe(output);
-
-						// if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
-
-						let connection:Connection = {
-							socket,
-							name:peer.name,
-							number:peer.number,
-							interface:interFace,
-						};
-
-						output.write(`\r\n${DELIMITER}\r\n`);
-						resolve(connection);
-					})
-					.catch(err=>logger.log(inspect`error: ${err}`));
-				});
-
-				interFace.on('reject', reason=>{
-					clearTimeout(timeout);
-					interFace.end();
-					
-					logger.log(util.inspect(reason));
-					output.write(`\r\n${reason}`); // \r\n is included in reject message
-					output.write(`${DELIMITER}\r\n`);
-					reject();
-				});
-
-
-				socket.once('error', (err:any)=>{
-					switch(err.code){
-						case "EHOSTUNREACH":
-							clearTimeout(timeout);
-							output.write("\r\nderailed\r\n");
-							interFace.end();
-
-							output.write(`${DELIMITER}\r\n`);
-							break;
-						default:
-							logger.log('unexpected error: '+err.code);
-					}
-				});
-
-				socket.on('error', (err)=>{
-					socket.end();
-					logger.log(inspect`socket error: ${err}`);
-					reject();
-				});
-
-				socket.connect({
-					host: peer.hostname||peer.ipaddress,
-					port: parseInt(peer.port),
-				});	
 			}
+
+			// output.write('valid client type\r\n');
+
+			let socket = new Socket();
+
+			socket.pipe(interFace.external);
+			interFace.external.pipe(socket);
+
+
+			let timeout = setTimeout(()=>{
+				output.write("timeout\r\n");
+				interFace.end();
+
+				output.write(`${DELIMITER}\r\n`);
+				reject('timeout');
+			}, 10000);
+
+			socket.on('connect', ()=>{
+
+				if(!(interFace instanceof AsciiInterface&&peer.extension === null)){
+					logger.log('calling: '+peer.extension);
+					interFace.call(peer.extension);
+				}
+
+				confirm(interFace.internal, output, timeout, +index)
+				.then(()=>{
+					// output.write('\r\n');
+					interFace.internal.unpipe(output);
+
+					// if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
+
+					let connection:Connection = {
+						socket,
+						name:peer.name,
+						number:peer.number,
+						interface:interFace,
+					};
+
+					output.write(`\r\n${DELIMITER}\r\n`);
+					resolve(connection);
+				})
+				.catch(err=>logger.log(inspect`error: ${err}`));
+			});
+
+			interFace.on('reject', reason=>{
+				clearTimeout(timeout);
+				interFace.end();
+				
+				logger.log(util.inspect(reason));
+				output.write(`${reason}`); // \r\n is included in reject message
+				output.write(`${DELIMITER}\r\n`);
+				reject(reason);
+			});
+
+
+			socket.once('error', (err:any)=>{
+				switch(err.code){
+					case "EHOSTUNREACH":
+						clearTimeout(timeout);
+						interFace.end();
+						
+						output.write("derailed\r\n");
+						output.write(`${DELIMITER}\r\n`);
+						break;
+					default:
+						logger.log('unexpected error: '+err.code);
+				}
+			});
+
+			socket.on('error', (err)=>{
+				socket.end();
+				logger.log(inspect`socket error: ${err}`);
+				reject(err);
+			});
+
+			socket.connect({
+				host: peer.hostname||peer.ipaddress,
+				port: parseInt(peer.port),
+			});	
+		
 		}else{
-			output.write("number not found\r\n");
-			output.write(`${DELIMITER}\r\n`);
-			reject();
+			// output.write("--- 404 ---\r\n");
+			output.write("number not found\r\n\n");
+			reject('not found');
 		}
 	}))
 	.then((clients)=>callback(clients))

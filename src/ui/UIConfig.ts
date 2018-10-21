@@ -1,180 +1,142 @@
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
 
-
-import { UIConfig } from "./UITypes";
-import callGroup from "../callGroup";
-import CallEndDetector from "./CallEndDetector";
-import serialEachPromise from "../util/serialEachPromise";
+import { UIConfig, Client } from "./UITypes";
+import call from "../call";
 import BaudotInterface from "../interfaces/BaudotInterface/BaudotInterface";
-import { logger, inspect, logStream } from "../util/logging";
-import confirm from "../confirm";
-import { DELIMITER } from "../config";
+import { confirmBlacklistToggle, isBlacklisted, addToBlacklist, removeFromBlacklist } from "../blacklist";
+import { ReadLine } from "readline";
+
+function close(readline:ReadLine, client:Client){
+	readline.close();
+
+	if(client.interface instanceof BaudotInterface) client.interface.sendEnd();
+	setTimeout(()=>{
+		client.interface.end();
+		client.socket.end();
+	}, 1500);
+}
 
 let uiConfig:UIConfig = {
 	start: {
-		text: "welcome!\r\n'1' for A1\r\n'2' for A2\r\n'end' to disconnect\r\n",
+		text: "welcome!\r\n1) call numbers\r\n2) (un)blacklist a number\r\n3) check blacklist-status of a number\r\n",
 		responseHandler: (response, readline, client, questions, callback)=>{
 			if(response === "1"){
-				callback(questions.A1);
+				client.interface.internal.write("enter numbers and confirm with LF\r\ntype '+++' to finish\r\n");
+				callback(questions.addNumber);
 			}else if(response === "2"){
-				callback(questions.A2);
-			}else if(response === "end"){
-				client.interface.internal.write("bye!\r\n");
-				readline.close();
-				client.socket.end();
-			}else{
-				client.interface.internal.write("invalid input!\r\n");
-				callback();
-			}
-		},
-	},
-	A1:{
-		text: "A1!\r\n'start' to go back to the start\r\n'2' for A2\r\n'end' to disconnect\r\n",
-		responseHandler: (response, readline, client, questions, callback)=>{
-			if(response === "2"){
-				callback(questions.A2);
-			}else if(response === "start"){
-				callback(questions.start);
-			}else if(response === "end"){
-				client.interface.internal.write("bye!\r\n");
-				readline.close();
-				client.socket.end();
-			}else{
-				client.interface.internal.write("invalid input!\r\n");
-				callback();
-			}
-		},
-	},
-	A2:{
-		text: "A2!\r\n'start' to go back to the start\r\n'1' for A1\r\n'3' for call\r\n'end' to disconnect\r\n",
-		responseHandler: (response, readline, client, questions, callback)=>{
-			if(response === "1"){
-				callback(questions.A1);
+				callback(questions.blacklist);
 			}else if(response === "3"){
-				callback(questions.call);
-			}else if(response === "start"){
-				callback(questions.start);
-			}else if(response === "end"){
-				client.interface.internal.write("bye!\r\n");
-				readline.close();
-				client.socket.end();
+				callback(questions.blacklistStatus);
 			}else{
 				client.interface.internal.write("invalid input!\r\n");
 				callback();
 			}
 		},
 	},
-	call:{
-		text: "Welcome!\r\nenter numbers seperated by ','\r\n",
+	blacklist: {
+		text: "enter a number to add to/remove from the blacklist\r\n- ",
 		responseHandler: (response, readline, client, questions, callback)=>{
-			const internal = client.interface.internal;
-			internal.write('\r\n');
+			if(isNaN(parseInt(response))){
+				client.interface.internal.write("not a number!\r\n");
+				callback(questions.start);
+			}else{
+				confirmBlacklistToggle(response);
 
-			readline.close();
 
-			let output = callGroup(response.split(","), (connections)=>{
-				connections = connections.filter(x=>x);
-
-				output.unpipe(internal);
 				// tslint:disable-next-line:max-line-length
-				internal.write(`You are now connected to ${connections.length} peer${connections.length===1?'':'s'}. Type '+++' to end message\r\n`);
+				client.interface.internal.write(`${response} will be called in one minute,\r\nto confirm they want to be ${isBlacklisted(response)?'un':''}blacklisted\r\n`);
 				
-				for(let connection of connections){
-					connection.interface.internal.write('\r\n');
-					internal.pipe(connection.interface.internal);
+				close(readline, client);
+			}
+			
+		},
+	},
+	blacklistStatus: {
+		text: "enter a number to getthe blacklist status for\r\n- ",
+		responseHandler: (response, readline, client, questions, callback)=>{
+			if(isNaN(parseInt(response))){
+				client.interface.internal.write("not a number!\r\n");
+				callback(questions.start);
+			}else{
+				// tslint:disable-next-line:max-line-length
+				client.interface.internal.write(`${response} is ${isBlacklisted(response)?'':'not'} blacklisted\r\n`);
+				callback(questions.start);
+			}
+			
+		},
+	},
+	addNumber:{
+		text: "\r- ",
+		responseHandler: (response, readline, client, questions, callback)=>{
+			if(response === "+++"){
+				callback(questions.confirm);
+			}else{
+				if(isNaN(parseInt(response))){
+					client.interface.internal.write("not a number!\r\n");
+				}else{
+					client.numbers.push(response);
 				}
+				callback(questions.addNumber);
+			}
+		},
+	},
+	removeNumber:{
+		text: "\r\n- ",
+		responseHandler: (response, readline, client, questions, callback)=>{
+			let index = client.numbers.indexOf(response);
+			if(index > -1){
+				client.numbers.splice(index, 1);
+				client.interface.internal.write(`\r\nremoved ${response}\r\n`);
+				callback(questions.confirm);
+			}else{
+				client.interface.internal.write('\r\nnot a selected number\r\n');
+				callback(questions.confirm);
+			}
+		},
+	},
+	confirm:{
+		text: "1) call these numbers\r\n2) list numbers\r\n3) remove a number\r\n4) add more numbers\r\n",
+		responseHandler: (response, readline, client, questions, callback)=>{
+			switch(response){
+				case "1":
+					readline.close();
+					call(client, client.numbers);
+					break;
+				case "2":
+					// tslint:disable-next-line:max-line-length
+					client.interface.internal.write(`numbers:\r\n${'-'.repeat(10)}\r\n${client.numbers.join('\r\n')}\r\n${'-'.repeat(10)}\r\n`);
+					callback();
+					break;
+				case "3":
+					callback(questions.removeNumber);
+					break;
+				case "4":					
+					callback(questions.addNumber);
+					break;
+				default:
+					callback();
+			}
+		},
+	},
+	confirmBlacklist: {
+		text: "\r\nDo you want to be blacklisted? (j/y/n)\r\n- ",
+		responseHandler: (response, readline, client, questions, callback)=>{
+			response = response.toLowerCase();
+			if(response === 'y'||response === 'j'){
+				addToBlacklist(client.numbers[0]);
+				
+				client.interface.internal.write('\r\nyou are now blacklisted\r\n');
+				close(readline, client);
+			}else if(response === 'n'){
+				removeFromBlacklist(client.numbers[0]);
 
-				let detector = new CallEndDetector();
-				internal.pipe(detector);
-
-				detector.emitter.on('end', ()=>{
-					internal.unpipe(detector);
-
-					for(let connection of connections){
-						internal.pipe(connection.interface.internal);
-					}
-					internal.write(`\r\n\nStopped transmitting message\r\n`);
-
-					logger.log("message ended");
-					// logger.log(connections);
-
-					serialEachPromise(connections, (connection, index)=>new Promise((resolve, reject)=>{
-						logger.log(`confirming: ${connection.number} (${connection.name})`);
-
-						internal.write(`confirming: ${connection.number} (${connection.name})\r\n`);
-						internal.write(`${DELIMITER}\r\n`);
-
-						if((connection.interface as BaudotInterface).drained !== false){
-							// drained == true or drained == undefined (for Ascii clients)
-							logger.log('was already drained');
-
-							confirmClient();
-							
-						}else{
-							logger.log("wasn't already drained");
-							connection.interface.once('drain', ()=>{
-								logger.log('is now drained');
-
-								confirmClient();
-							});
-						}
-
-
-						function confirmClient(){
-							function close(){
-								internal.write(`${DELIMITER}\r\n\n`);
-								connection.interface.internal.unpipe(internal);
-
-								if(connection.interface instanceof BaudotInterface){
-									connection.interface.sendEnd();
-									setTimeout(()=>{
-										connection.interface.end();
-										connection.socket.end();
-									}, 2000);
-								}else{
-									connection.interface.end();
-									connection.socket.end();
-								}
-								resolve();
-							}
-
-							let timeout = setTimeout(()=>{
-								internal.write('timeout\r\n');
-								close();
-							}, 10000);
-
-							confirm(connection.interface.internal, internal, timeout, +index)
-							.then(()=>{
-								internal.write('\r\n');
-								close();
-							})
-							.catch(err=>{
-								logger.log(inspect`error: ${err}`);
-								internal.write('error\r\n');
-								close();
-							});
-						}
-					}))
-					.then(()=>{
-						logger.log("confirmed all peers");
-						internal.write('\r\nconfirmed all peers\r\n\r\n');
-
-						if(client.interface instanceof BaudotInterface){
-							client.interface.sendEnd();
-							setTimeout(()=>{
-								client.interface.end();
-								client.socket.end();
-							}, 2000);
-						}else{
-							client.interface.end();
-							client.socket.end();
-						}
-					})
-					.catch(err=>logger.log(inspect`confirmation error: ${err}`));
-				});
-			});
-			output.pipe(internal);
+				client.interface.internal.write('\r\nyou are now not blacklisted\r\n');
+				close(readline, client);
+			}else{
+				callback();
+			}
+			
 		},
 	},
 };

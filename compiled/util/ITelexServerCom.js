@@ -332,7 +332,7 @@ function decPackages(buffer) {
     return out;
 }
 exports.decPackages = decPackages;
-const TlnServer = { host: "localhost", port: 11811 };
+const TlnServer = { host: "telexgateway.de", port: 11811 };
 function peerQuery(number) {
     return new Promise((resolve, reject) => {
         let socket = new net.Socket();
@@ -348,7 +348,8 @@ function peerQuery(number) {
             socket.end();
             let pkg = decPackage(data);
             if (!pkg) {
-                return reject(new Error('no server result'));
+                reject(new Error('no server result'));
+                return;
             }
             if (pkg.type === 5) {
                 resolve(pkg.data);
@@ -362,13 +363,18 @@ function peerQuery(number) {
         });
         socket.connect(TlnServer, () => {
             socket.setTimeout(10 * 1000);
-            socket.write(encPackage({
-                type: 3,
-                data: {
-                    number,
-                    version: 1,
-                },
-            }));
+            try {
+                socket.write(encPackage({
+                    type: 3,
+                    data: {
+                        number,
+                        version: 1,
+                    },
+                }));
+            }
+            catch (err) {
+                reject(err);
+            }
         });
     });
 }

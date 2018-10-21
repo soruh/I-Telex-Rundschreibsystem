@@ -14,11 +14,11 @@ async function serialEachPromise<T,U>(iterable:Iterable<T>, promiseFunction:(val
 			results.push(await promiseFunction(iterable[key], key));
 			// tslint:disable-next-line:max-line-length
 			// logger.log(inspect`finished promiseFunction ${promiseFunction.name?promiseFunction.name+" ":""}called with key: ${key} value: ${iterable[key]} returned: ${results[results.length]}`);
-		  }catch(e){
+		}catch(e){
 			// tslint:disable-next-line:max-line-length
 			logger.log(inspect`error in promiseFunction ${promiseFunction.name?promiseFunction.name+" ":""} called with key: ${key} value: ${iterable[key]}`);
-			logger.log(inspect`${e}`);
-		  }
+			logger.log(inspect`Error: ${e}`);
+		}
 	}
 	return results;
 }

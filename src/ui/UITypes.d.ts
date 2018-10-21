@@ -7,6 +7,7 @@ import Interface from "../interfaces/Interface";
 interface Client {
 	socket:Socket;
 	interface:Interface;
+	numbers: string[]; //called numbers/own number
 }
 
 type Next = Question|((readline:ReadLine, questions:QuestionList)=>void);

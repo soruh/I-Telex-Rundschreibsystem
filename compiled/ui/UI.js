@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Question_1 = require("./Question");
+const logging_1 = require("../util/logging");
 class UI {
     constructor(config, entrypoint) {
         this.questions = {};
@@ -13,6 +14,7 @@ class UI {
         }
     }
     start(readline, client) {
+        logging_1.logger.log(logging_1.inspect `starting ui`);
         this.questions[this.entrypoint].ask(readline, client, this.questions);
     }
 }
