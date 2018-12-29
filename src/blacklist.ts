@@ -1,27 +1,28 @@
 import { join } from "path";
-import { readFileSync, writeFileSync, read } from "fs";
+import { readFileSync, writeFileSync, writeFile } from "fs";
 import { logger, inspect } from "./util/logging";
 import { peerQuery } from "./util/ITelexServerCom";
 import { PackageData_decoded_5 } from "./util/ITelexServerComTypes";
-import uiConfig from "./ui/UIConfig";
 import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import AsciiInterface from "./interfaces/AsciiInterface/AsciiInterface";
-import * as readline from "readline";
+import { createInterface } from "readline";
 import { Socket } from "net";
-import { Client } from "./ui/UITypes";
-import UI from "./ui/UI";
+import Interface from "./interfaces/Interface";
+
 
 
 
 const blackListPath = join(__dirname,'../blacklist.json');
 
-function blacklist():string[]{
+let blackListLocked = false;
+
+function getBlacklist():number[]{
 	try{
 		let file = readFileSync(blackListPath).toString();
 		let list = JSON.parse(file);
 		if(list instanceof Array) {
-			if(list.find(x=>typeof x !== "string")){
-				throw new Error('the blacklist must only contain strings');
+			if(list.find(x=>typeof x !== "number")){
+				throw new Error('the blacklist must only contain numbers');
 			}else{
 				return list;
 			}
@@ -34,38 +35,58 @@ function blacklist():string[]{
 	}
 }
 
-function addToBlacklist(number:string){
-	let oldBlacklist = blacklist();
-	if(oldBlacklist.indexOf(number) === -1){
-		oldBlacklist.push(number);
-		writeFileSync(blackListPath, JSON.stringify(oldBlacklist));
+function changeBlacklist(callback:(blacklist:number[])=>number[]){
+	if(blackListLocked){
+		setTimeout(changeBlacklist, 100, callback); // wait .1 seconds before trying again.
+		return;
 	}
+	
+	blackListLocked=true;
+
+	writeFile(blackListPath, JSON.stringify(callback(getBlacklist())), ()=>{
+		blackListLocked=false;
+	});
 }
 
-function removeFromBlacklist(number:string){
-	let oldBlacklist = blacklist();
-	let index = oldBlacklist.indexOf(number);
-	if(index > -1){
-		oldBlacklist.splice(index, 1);
-		writeFileSync(blackListPath, JSON.stringify(oldBlacklist));
-	}
+function addToBlacklist(number:number){
+	changeBlacklist(blacklist=>{
+		if(blacklist.indexOf(number) === -1){
+			blacklist.push(number);
+		}
+
+		return blacklist;
+	});
 }
 
-async function confirmBlacklistToggle(number:string){
+
+function removeFromBlacklist(number:number){
+	changeBlacklist(blacklist=>{
+		let index = blacklist.indexOf(number);
+		if(index > -1){
+			blacklist.splice(index, 1);
+		}
+		
+		return blacklist;
+	});
+}
+
+async function updateBlacklistForNumber(number:number){
 	let peer:PackageData_decoded_5;
 	try{
 		peer = await peerQuery(number);
 	}catch(err){
 		logger.log(`Error in peerQuery:\r\n${err}`);
+		throw(new Error('failed retrieve number from server.'));
 	}
 
 	if(!peer){
-		return;
+		logger.log(`Peer not found.`);
+		throw new Error('Peer not found.');
 	}
 
 	setTimeout(()=>{
 		logger.log(inspect`calling ${number} to confirm their blacklisting`);
-		let interFace;
+		let interFace:Interface;
 		switch(peer.type){
 			case 1: 
 			case 2: 
@@ -81,7 +102,7 @@ async function confirmBlacklistToggle(number:string){
 				return;
 		}
 
-		const rl = readline.createInterface({
+		const rl = createInterface({
 			input:interFace.internal,
 			output:interFace.internal,
 		});
@@ -91,14 +112,6 @@ async function confirmBlacklistToggle(number:string){
 		socket.pipe(interFace.external);
 		interFace.external.pipe(socket);
 	
-	
-		const ui = new UI(uiConfig, "confirmBlacklist");
-		const client:Client = {
-			interface:interFace,
-			socket,
-			numbers:[number],
-		};
-		
 
 		socket.on('error', err=>{
 			socket.end();
@@ -118,22 +131,51 @@ async function confirmBlacklistToggle(number:string){
 		});
 
 
+		function confirmBlacklisting(){
+			rl.question(`do you (${number}) want to be blacklisted?\r\n (j/y/n) `, answer=>{
+				switch(answer.toLowerCase()){
+					case 'y':
+					case 'j':
+						addToBlacklist(number);
+						interFace.internal.write("You are now blacklisted.\r\n");
+						break;
+					case 'n':
+						removeFromBlacklist(number);
+						interFace.internal.write("You are now not blacklisted.\r\n");
+						break;
+					default:
+						interFace.internal.write("Invalid input.\r\n");
+						confirmBlacklisting();
+				}
+			});
+		}
+
 		socket.connect({host:peer.ipaddress||peer.hostname, port:+peer.port}, ()=>{
-			client.interface.internal.write("Rundschreibsystem:\r\n");
-			ui.start(rl, client);
+			interFace.internal.write("Rundschreibsystem:\r\n");
+
+			confirmBlacklisting();
 		});
+
+
+		setTimeout(()=>{ // close connection after 5 minutes
+
+			interFace.end(); // end the interface
+			setTimeout(()=>{
+				socket.destroy(); // remove the tcp socket 1 second later, to give it time to flush
+				// TODO: do this on('flush')?
+			}, 1000);
+
+		}, 5*60*1000);
 	}, 60*1000);
 }
 
-// tslint:enable:no-string-throw
-function isBlacklisted(number:string):boolean{
-	return blacklist().indexOf(number) > -1;
+function isBlacklisted(number:number):boolean{
+	return getBlacklist().indexOf(number) > -1;
 }
 export {
-	blacklist,
 	isBlacklisted,
-	confirmBlacklistToggle,
 	addToBlacklist,
 	removeFromBlacklist,
+	updateBlacklistForNumber,
 };
 

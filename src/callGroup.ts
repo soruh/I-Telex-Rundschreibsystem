@@ -24,8 +24,8 @@ interface Connection {
 	interface:Interface;
 }
 
-function callGroup(group:string[], callback:(connections:Connection[])=>void):PassThrough {
-	let output = new PassThrough();
+function callGroup(group:number[], callback:(err:Error, connections:Connection[])=>void):PassThrough {
+	const output = new PassThrough();
 
 	serialEachPromise(group, (number, index)=>
 	new Promise(async (resolve, reject)=>{
@@ -95,9 +95,11 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 					interFace.call(peer.extension);
 				}
 
-				confirm(interFace.internal, output, timeout, +index)
-				.then(()=>{
-					// output.write('\r\n');
+				confirm(interFace.internal, timeout, +index)
+				.then(result=>{
+					output.write(result);
+					output.write('\r\n');
+
 					interFace.internal.unpipe(output);
 
 					// if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
@@ -112,7 +114,9 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 					output.write(`\r\n${DELIMITER}\r\n`);
 					resolve(connection);
 				})
-				.catch(err=>logger.log(inspect`error: ${err}`));
+				.catch(err=>{
+					logger.log(inspect`error: ${err}`);
+				});
 			});
 
 			interFace.on('reject', reason=>{
@@ -157,10 +161,8 @@ function callGroup(group:string[], callback:(connections:Connection[])=>void):Pa
 			reject('not found');
 		}
 	}))
-	.then((clients)=>callback(clients))
-	.catch(err=>{
-		// 
-	});
+	.then((clients)=>callback(null, clients))
+	.catch(err=>callback(err, null));
 	return output;
 }
 

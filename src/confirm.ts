@@ -1,38 +1,46 @@
 import { Duplex } from "stream";
 import { logger, logStream,inspect } from "./util/logging";
 
-function confirm(socket:Duplex, output:Duplex, timeout:NodeJS.Timer, index:number){
+function confirm(socket:Duplex, timeout:NodeJS.Timer, index:number):Promise<string>{
 return new Promise((resolve, reject)=>{
 	logger.log(`confirming client ${index}`);
 	let loggingStream = new logStream(inspect`called client ${index}`, socket);
 
 	socket.write('@');
 
-	function end(Resolve:boolean){
+	function end(success:boolean){
 		loggingStream.end();
-		logger.log(`${Resolve?'confirmed':'failed to confirm'} client ${index}`);
+		logger.log(`${success?'confirmed':'failed to confirm'} client ${index}`);
 
 		socket.removeAllListeners('close');
 		socket.removeAllListeners('data');
-		socket.unpipe(output);
 
 		clearInterval(timeoutCheckInterval);
 		clearTimeout(timeout);
 		clearTimeout(resolveTimeout);
 
-		if(Resolve){
-			resolve();
+		if(success){
+			resolve(buffer);
 		} else {
 			reject();
 		}
 	}
 
+	let buffer = '';
+	let lastPackage = 0;
+	
+	socket.on('data', chunk=>{
+		buffer+=chunk.toString();
 
+		lastPackage = Date.now();
+	});
+
+
+
+	
+	let resolveTimeout:NodeJS.Timer;
 	// always resolve after 7,5 secs
 
-	let resolveTimeout:NodeJS.Timer;
-
-	socket.pipe(output, {end:false});
 	socket.once('data',()=>{
 		clearTimeout(timeout);
 		resolveTimeout = setTimeout(()=>{
@@ -47,15 +55,8 @@ return new Promise((resolve, reject)=>{
 	});
 
 
-	// resolve if client didn't send data for 1 sec
-
-	let lastPackage = 0;
-	socket.on('data',()=>{
-		lastPackage = Date.now();
-	});
-
 	let timeoutCheckInterval = setInterval(()=>{
-
+		// resolve if client didn't send data for 1 sec
 		if(!resolveTimeout){
 			return;
 		}

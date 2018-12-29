@@ -173,12 +173,6 @@ class BaudotInterface extends Interface{
 			this.emit("send", data);
 		}
 	}
-	public end(){
-		clearInterval(this.pulse);
-		clearTimeout(this.baudotTimeout);
-
-		this.emit("end");
-	}
 	private baudotDataListener([type, ,...data]:number[]){
 		this.resetTimeout();
 		// logger.log(type, data);
@@ -235,6 +229,31 @@ class BaudotInterface extends Interface{
 			   	break;
 			default:
 				logger.log(inspect`unknown package type: ${type} data: ${data}`);
+		}
+	}
+
+	public end(){
+		if(this.drained){
+			if(logDebug) logger.log(inspect`ending baudotinterface`);
+			try{
+				this.sendEnd();
+			}catch(err){
+				//
+			}
+
+			clearInterval(this.pulse);
+			clearTimeout(this.baudotTimeout);		
+	
+			this.internal.end();
+			this.external.end();
+	
+			this._internal.end();
+			this._external.end();
+	
+			this.emit("end");
+		}else{
+			if(logDebug) logger.log(inspect`not ending baudotinterface, because it is not drained yet.`);
+			this.on('drain', this.end);
 		}
 	}
 } 

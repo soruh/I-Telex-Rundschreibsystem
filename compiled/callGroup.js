@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
@@ -22,12 +14,12 @@ const serialEachPromise_1 = require("./util/serialEachPromise");
 const config_1 = require("./config");
 const blacklist_1 = require("./blacklist");
 function callGroup(group, callback) {
-    let output = new stream_1.PassThrough();
-    serialEachPromise_1.default(group, (number, index) => new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+    const output = new stream_1.PassThrough();
+    serialEachPromise_1.default(group, (number, index) => new Promise(async (resolve, reject) => {
         output.write(`calling: ${number}\r\n`);
         let peer;
         try {
-            peer = yield ITelexServerCom_1.peerQuery(number);
+            peer = await ITelexServerCom_1.peerQuery(number);
         }
         catch (err) {
             logging_1.logger.log(`Error in peerQuery:\r\n${err}`);
@@ -77,9 +69,10 @@ function callGroup(group, callback) {
                     logging_1.logger.log('calling: ' + peer.extension);
                     interFace.call(peer.extension);
                 }
-                confirm_1.default(interFace.internal, output, timeout, +index)
-                    .then(() => {
-                    // output.write('\r\n');
+                confirm_1.default(interFace.internal, timeout, +index)
+                    .then(result => {
+                    output.write(result);
+                    output.write('\r\n');
                     interFace.internal.unpipe(output);
                     // if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
                     let connection = {
@@ -91,7 +84,9 @@ function callGroup(group, callback) {
                     output.write(`\r\n${config_1.DELIMITER}\r\n`);
                     resolve(connection);
                 })
-                    .catch(err => logging_1.logger.log(logging_1.inspect `error: ${err}`));
+                    .catch(err => {
+                    logging_1.logger.log(logging_1.inspect `error: ${err}`);
+                });
             });
             interFace.on('reject', reason => {
                 clearTimeout(timeout);
@@ -128,11 +123,9 @@ function callGroup(group, callback) {
             output.write("number not found\r\n\n");
             reject('not found');
         }
-    })))
-        .then((clients) => callback(clients))
-        .catch(err => {
-        // 
-    });
+    }))
+        .then((clients) => callback(null, clients))
+        .catch(err => callback(err, null));
     return output;
 }
 exports.default = callGroup;

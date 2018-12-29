@@ -1,31 +1,22 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
 const fs_1 = require("fs");
 const logging_1 = require("./util/logging");
 const ITelexServerCom_1 = require("./util/ITelexServerCom");
-const UIConfig_1 = require("./ui/UIConfig");
 const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface");
 const AsciiInterface_1 = require("./interfaces/AsciiInterface/AsciiInterface");
-const readline = require("readline");
+const readline_1 = require("readline");
 const net_1 = require("net");
-const UI_1 = require("./ui/UI");
 const blackListPath = path_1.join(__dirname, '../blacklist.json');
-function blacklist() {
+let blackListLocked = false;
+function getBlacklist() {
     try {
         let file = fs_1.readFileSync(blackListPath).toString();
         let list = JSON.parse(file);
         if (list instanceof Array) {
-            if (list.find(x => typeof x !== "string")) {
-                throw new Error('the blacklist must only contain strings');
+            if (list.find(x => typeof x !== "number")) {
+                throw new Error('the blacklist must only contain numbers');
             }
             else {
                 return list;
@@ -40,89 +31,118 @@ function blacklist() {
         return [];
     }
 }
-exports.blacklist = blacklist;
-function addToBlacklist(number) {
-    let oldBlacklist = blacklist();
-    if (oldBlacklist.indexOf(number) === -1) {
-        oldBlacklist.push(number);
-        fs_1.writeFileSync(blackListPath, JSON.stringify(oldBlacklist));
+function changeBlacklist(callback) {
+    if (blackListLocked) {
+        setTimeout(changeBlacklist, 100, callback); // wait .1 seconds before trying again.
+        return;
     }
+    blackListLocked = true;
+    fs_1.writeFile(blackListPath, JSON.stringify(callback(getBlacklist())), () => {
+        blackListLocked = false;
+    });
+}
+function addToBlacklist(number) {
+    changeBlacklist(blacklist => {
+        if (blacklist.indexOf(number) === -1) {
+            blacklist.push(number);
+        }
+        return blacklist;
+    });
 }
 exports.addToBlacklist = addToBlacklist;
 function removeFromBlacklist(number) {
-    let oldBlacklist = blacklist();
-    let index = oldBlacklist.indexOf(number);
-    if (index > -1) {
-        oldBlacklist.splice(index, 1);
-        fs_1.writeFileSync(blackListPath, JSON.stringify(oldBlacklist));
-    }
-}
-exports.removeFromBlacklist = removeFromBlacklist;
-function confirmBlacklistToggle(number) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let peer;
-        try {
-            peer = yield ITelexServerCom_1.peerQuery(number);
+    changeBlacklist(blacklist => {
+        let index = blacklist.indexOf(number);
+        if (index > -1) {
+            blacklist.splice(index, 1);
         }
-        catch (err) {
-            logging_1.logger.log(`Error in peerQuery:\r\n${err}`);
-        }
-        if (!peer) {
-            return;
-        }
-        setTimeout(() => {
-            logging_1.logger.log(logging_1.inspect `calling ${number} to confirm their blacklisting`);
-            let interFace;
-            switch (peer.type) {
-                case 1:
-                case 2:
-                case 5:
-                    interFace = new BaudotInterface_1.default();
-                    break;
-                case 3:
-                case 4:
-                    interFace = new AsciiInterface_1.default(false);
-                    break;
-                case 6:
-                default:
-                    return;
-            }
-            const rl = readline.createInterface({
-                input: interFace.internal,
-                output: interFace.internal,
-            });
-            let socket = new net_1.Socket();
-            socket.pipe(interFace.external);
-            interFace.external.pipe(socket);
-            const ui = new UI_1.default(UIConfig_1.default, "confirmBlacklist");
-            const client = {
-                interface: interFace,
-                socket,
-                numbers: [number],
-            };
-            socket.on('error', err => {
-                socket.end();
-                logging_1.logger.log(logging_1.inspect `called client error: ${err}`);
-            });
-            socket.on('close', () => {
-                rl.close();
-                logging_1.logger.log(logging_1.inspect `called client disconnected`);
-            });
-            socket.setTimeout(60 * 1000);
-            socket.on('timeout', () => {
-                socket.end();
-                logging_1.logger.log(logging_1.inspect `called client timed out`);
-            });
-            socket.connect({ host: peer.ipaddress || peer.hostname, port: +peer.port }, () => {
-                client.interface.internal.write("Rundschreibsystem:\r\n");
-                ui.start(rl, client);
-            });
-        }, 60 * 1000);
+        return blacklist;
     });
 }
-exports.confirmBlacklistToggle = confirmBlacklistToggle;
-// tslint:enable:no-string-throw
+exports.removeFromBlacklist = removeFromBlacklist;
+async function updateBlacklistForNumber(number) {
+    let peer;
+    try {
+        peer = await ITelexServerCom_1.peerQuery(number);
+    }
+    catch (err) {
+        logging_1.logger.log(`Error in peerQuery:\r\n${err}`);
+        throw (new Error('failed retrieve number from server.'));
+    }
+    if (!peer) {
+        logging_1.logger.log(`Peer not found.`);
+        throw new Error('Peer not found.');
+    }
+    setTimeout(() => {
+        logging_1.logger.log(logging_1.inspect `calling ${number} to confirm their blacklisting`);
+        let interFace;
+        switch (peer.type) {
+            case 1:
+            case 2:
+            case 5:
+                interFace = new BaudotInterface_1.default();
+                break;
+            case 3:
+            case 4:
+                interFace = new AsciiInterface_1.default(false);
+                break;
+            case 6:
+            default:
+                return;
+        }
+        const rl = readline_1.createInterface({
+            input: interFace.internal,
+            output: interFace.internal,
+        });
+        let socket = new net_1.Socket();
+        socket.pipe(interFace.external);
+        interFace.external.pipe(socket);
+        socket.on('error', err => {
+            socket.end();
+            logging_1.logger.log(logging_1.inspect `called client error: ${err}`);
+        });
+        socket.on('close', () => {
+            rl.close();
+            logging_1.logger.log(logging_1.inspect `called client disconnected`);
+        });
+        socket.setTimeout(60 * 1000);
+        socket.on('timeout', () => {
+            socket.end();
+            logging_1.logger.log(logging_1.inspect `called client timed out`);
+        });
+        function confirmBlacklisting() {
+            rl.question(`do you (${number}) want to be blacklisted?\r\n (j/y/n) `, answer => {
+                switch (answer.toLowerCase()) {
+                    case 'y':
+                    case 'j':
+                        addToBlacklist(number);
+                        interFace.internal.write("You are now blacklisted.\r\n");
+                        break;
+                    case 'n':
+                        removeFromBlacklist(number);
+                        interFace.internal.write("You are now not blacklisted.\r\n");
+                        break;
+                    default:
+                        interFace.internal.write("Invalid input.\r\n");
+                        confirmBlacklisting();
+                }
+            });
+        }
+        socket.connect({ host: peer.ipaddress || peer.hostname, port: +peer.port }, () => {
+            interFace.internal.write("Rundschreibsystem:\r\n");
+            confirmBlacklisting();
+        });
+        setTimeout(() => {
+            interFace.end(); // end the interface
+            setTimeout(() => {
+                socket.destroy(); // remove the tcp socket 1 second later, to give it time to flush
+                // TODO: do this on('flush')?
+            }, 1000);
+        }, 5 * 60 * 1000);
+    }, 60 * 1000);
+}
+exports.updateBlacklistForNumber = updateBlacklistForNumber;
 function isBlacklisted(number) {
-    return blacklist().indexOf(number) > -1;
+    return getBlacklist().indexOf(number) > -1;
 }
 exports.isBlacklisted = isBlacklisted;

@@ -335,7 +335,7 @@ function decPackages(buffer: number[] | Buffer): Package_decoded[] {
 
 const TlnServer = {host:"telexgateway.de", port:11811};
 
-function peerQuery(number):Promise<PackageData_decoded_5>{
+function peerQuery(number:number):Promise<PackageData_decoded_5>{
 	return new Promise((resolve, reject)=>{
 		let socket = new net.Socket();
 		let chunker = new ChunkPackages();

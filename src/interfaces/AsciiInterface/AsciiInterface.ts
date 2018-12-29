@@ -5,12 +5,12 @@ import Interface from "../Interface";
 import ExtractAsciiExtension from "./ExtractAsciiExtension";
 
 class AsciiInterface extends Interface {
-	public extractor;
+	public extractor:ExtractAsciiExtension;
 	constructor(caller:boolean){
 		super();
 		if(caller){
 			this.extractor = new ExtractAsciiExtension();
-			this.extractor.on('extension', (ext)=>{
+			this.extractor.on('extension', ext=>{
 				// TODO
 			});
 			this._external.pipe(this.extractor).pipe(this._internal);
@@ -22,6 +22,16 @@ class AsciiInterface extends Interface {
 	}
 	public call(extension:string){
 		this._external.write(`*${extension}*`);
+	}
+
+	public end(){
+		this.internal.end();
+		this.external.end();
+
+		this._internal.end();
+		this._external.end();
+
+		this.emit("end");
 	}
 }
 

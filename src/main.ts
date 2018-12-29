@@ -4,12 +4,14 @@
 
 import * as readline from "readline";
 import * as net from "net";
-import UI from "./ui/UI";
-import uiConfig from "./ui/UIConfig";
 import { logger, inspect, logStream } from "./util/logging";
-import { Client } from "./ui/UITypes";
 import AsciiInterface from "./interfaces/AsciiInterface/AsciiInterface";
 import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
+import ui from "./ui";
+import Interface from "./interfaces/Interface";
+import callGroup from "./callGroup";
+import CallEndDetector from "./CallEndDetector";
+import call from "./call";
 
 declare global {
 	interface Buffer {
@@ -24,38 +26,26 @@ function readNullTermString(encoding: string = "utf8", start: number = 0, end: n
 };
 
 
+
 const server = new net.Server();
 server.on('connection', socket=>{
-	const asciiInterFace = new AsciiInterface(false);
-	const baudotInterFace = new BaudotInterface();
-
-	asciiInterFace._external.pause();
-	baudotInterFace._external.pause();
-
-	socket.pipe(asciiInterFace.external);
-	asciiInterFace.external.pipe(socket);
-
-	socket.pipe(baudotInterFace.external);
-	baudotInterFace.external.pipe(socket);
 
 
-	let interFace;
-	socket.once('data', data=>{
-		if([0,1,2,3,4,6,7,8,9].indexOf(data[0]) === -1){
-			interFace = asciiInterFace;
-			asciiInterFace._external.resume();
 
-			baudotInterFace.internal.unpipe();
-			baudotInterFace.external.unpipe();
-			baudotInterFace.end();
+
+	let interFace:Interface;
+	socket.once('data', chunk=>{
+		if([0,1,2,3,4,6,7,8,9].indexOf(chunk[0]) === -1){
+			interFace = new AsciiInterface(false);
 		}else{
-			interFace = baudotInterFace;
-			baudotInterFace._external.resume();
-			
-			asciiInterFace.internal.unpipe();
-			asciiInterFace.external.unpipe();
-			asciiInterFace.end();
+			interFace = new BaudotInterface();
 		}
+
+		interFace.external.write(chunk);
+
+		socket.pipe(interFace.external);
+		interFace.external.pipe(socket);
+	
 
 		logger.log(inspect`${interFace instanceof BaudotInterface?'baudot':'ascii'} client calling`);
 
@@ -78,6 +68,8 @@ server.on('connection', socket=>{
 		
 
 		socket.on('close', ()=>{
+			interFace.end();
+			
 			logStreamIn.end();
 			logStreamOut.end();
 			logger.log(inspect`calling client disconnected`);
@@ -89,28 +81,33 @@ server.on('connection', socket=>{
 			output:interFace.internal,
 		});
 	
-	
-		const ui = new UI(uiConfig, "start");
-		const client:Client = {
-			interface:interFace,
-			socket,
-			numbers:[],
-		};
-	
-		// ui.start(rl, client); // for ascii interface
-	
+		async function handleClient(){
+			const result = await ui(rl);
+			switch(result.nextAction){
+				case 'call':
+					call({
+						interface:interFace,
+						socket,
+					}, result.callList);
+
+					break;
+				case 'end':
+				default:
+					// TODO: end the connection
+			}
+		}
+
 		if(interFace instanceof BaudotInterface){
 			interFace.on('call', ext=>{ // for baudot interface
-				ui.start(rl, client);
+				handleClient();
 				logger.log(inspect`baudot client calling extension: ${ext}`);
 			});
 		}else{
-			ui.start(rl, client);
+			handleClient();
 			logger.log(inspect`ascii client calling`);
 		}
 	});
 });
 server.listen(4000);
-
 
 

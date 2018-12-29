@@ -2,14 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const logging_1 = require("./util/logging");
 const callGroup_1 = require("./callGroup");
-const CallEndDetector_1 = require("./ui/CallEndDetector");
+const CallEndDetector_1 = require("./CallEndDetector");
 const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface");
 const serialEachPromise_1 = require("./util/serialEachPromise");
 const confirm_1 = require("./confirm");
 const config_1 = require("./config");
 function call(caller, numbers) {
     caller.interface.internal.write('\r\n');
-    let output = callGroup_1.default(numbers, (connections) => {
+    let output = callGroup_1.default(numbers, (error, connections) => {
         connections = connections.filter(x => x);
         output.unpipe(caller.interface.internal);
         // tslint:disable-next-line:max-line-length
@@ -48,25 +48,17 @@ function call(caller, numbers) {
                     function close() {
                         caller.interface.internal.write(`${config_1.DELIMITER}\r\n\n`);
                         connection.interface.internal.unpipe(caller.interface.internal);
-                        if (connection.interface instanceof BaudotInterface_1.default) {
-                            connection.interface.sendEnd();
-                            setTimeout(() => {
-                                connection.interface.end();
-                                connection.socket.end();
-                            }, 2000);
-                        }
-                        else {
-                            connection.interface.end();
-                            connection.socket.end();
-                        }
+                        connection.interface.end();
+                        connection.socket.end();
                         resolve();
                     }
                     let timeout = setTimeout(() => {
                         caller.interface.internal.write('timeout\r\n');
                         close();
                     }, 10000);
-                    confirm_1.default(connection.interface.internal, caller.interface.internal, timeout, +index)
-                        .then(() => {
+                    confirm_1.default(connection.interface.internal, timeout, +index)
+                        .then(result => {
+                        caller.interface.internal.write(result);
                         caller.interface.internal.write('\r\n');
                         close();
                     })

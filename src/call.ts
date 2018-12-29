@@ -1,17 +1,17 @@
 import { Duplex } from "stream";
 import { logger, inspect } from "./util/logging";
 import callGroup from "./callGroup";
-import CallEndDetector from "./ui/CallEndDetector";
+import CallEndDetector from "./CallEndDetector";
 import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import serialEachPromise from "./util/serialEachPromise";
 import confirm from "./confirm";
 import { DELIMITER } from "./config";
-import { Client } from "./ui/UITypes";
+import Client from "./Client";
 
-function call(caller:Client, numbers:string[]){
+function call(caller:Client, numbers:number[]){
 	caller.interface.internal.write('\r\n');
 
-	let output = callGroup(numbers, (connections)=>{
+	let output = callGroup(numbers, (error, connections)=>{
 		connections = connections.filter(x=>x);
 
 		output.unpipe(caller.interface.internal);
@@ -32,6 +32,7 @@ function call(caller:Client, numbers:string[]){
 			for(let connection of connections){
 				caller.interface.internal.pipe(connection.interface.internal);
 			}
+
 			caller.interface.internal.write(`\r\n\nStopped transmitting message\r\n`);
 
 			logger.log("message ended");
@@ -64,16 +65,9 @@ function call(caller:Client, numbers:string[]){
 						caller.interface.internal.write(`${DELIMITER}\r\n\n`);
 						connection.interface.internal.unpipe(caller.interface.internal);
 
-						if(connection.interface instanceof BaudotInterface){
-							connection.interface.sendEnd();
-							setTimeout(()=>{
-								connection.interface.end();
-								connection.socket.end();
-							}, 2000);
-						}else{
-							connection.interface.end();
-							connection.socket.end();
-						}
+						connection.interface.end();
+						connection.socket.end();
+
 						resolve();
 					}
 
@@ -82,8 +76,9 @@ function call(caller:Client, numbers:string[]){
 						close();
 					}, 10000);
 
-					confirm(connection.interface.internal, caller.interface.internal, timeout, +index)
-					.then(()=>{
+					confirm(connection.interface.internal, timeout, +index)
+					.then(result=>{
+						caller.interface.internal.write(result);
 						caller.interface.internal.write('\r\n');
 						close();
 					})

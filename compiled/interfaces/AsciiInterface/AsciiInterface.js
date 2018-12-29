@@ -9,7 +9,7 @@ class AsciiInterface extends Interface_1.default {
         super();
         if (caller) {
             this.extractor = new ExtractAsciiExtension_1.default();
-            this.extractor.on('extension', (ext) => {
+            this.extractor.on('extension', ext => {
                 // TODO
             });
             this._external.pipe(this.extractor).pipe(this._internal);
@@ -22,6 +22,13 @@ class AsciiInterface extends Interface_1.default {
     }
     call(extension) {
         this._external.write(`*${extension}*`);
+    }
+    end() {
+        this.internal.end();
+        this.external.end();
+        this._internal.end();
+        this._external.end();
+        this.emit("end");
     }
 }
 exports.default = AsciiInterface;
