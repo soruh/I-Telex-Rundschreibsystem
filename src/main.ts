@@ -69,14 +69,26 @@ server.on('connection', socket=>{
 		});
 
 	
-		const rl = readline.createInterface({
-			input:interFace.internal,
-			output:interFace.internal,
-		});
-	
+
 		async function handleClient(){
 			interFace.internal.write('\r\n\n');
+			interFace.internal.write("Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help\r\n");
+
+			if(interFace instanceof BaudotInterface){
+				if(!interFace.drained){
+					await new Promise((resolve, reject) => {
+						interFace.on('drain', resolve);
+					});
+				}
+			}
+
+			const rl = readline.createInterface({
+				input:interFace.internal,
+				output:interFace.internal,
+			});
+			
 			const result = await ui(rl);
+
 			switch(result.nextAction){
 				case 'call':
 					call({

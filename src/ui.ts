@@ -247,8 +247,6 @@ function ui(readline:ReadLine):Promise<{
 	callList: number[],
 }>{
 	return new Promise((resolve, reject) => {
-		readline.output.write("Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help\r\n");
-
 		let mode = 'main';
 		let callList = [];
 
