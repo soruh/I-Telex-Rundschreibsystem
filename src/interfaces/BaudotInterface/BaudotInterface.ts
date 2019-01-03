@@ -100,6 +100,11 @@ class BaudotInterface extends Interface{
 		this.internal.on("close",()=>logger.log("inside closed"));
 	}
 
+	public debug(){
+		// tslint:disable-next-line:max-line-length
+		if(logDebug) logger.log(inspect`bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized} drained: ${this.drained}`);
+	}
+
 	private resetTimeout(){
 		if(logDebug) logger.log("resetTimeout");
 		clearTimeout(this.baudotTimeout);
@@ -130,6 +135,7 @@ class BaudotInterface extends Interface{
 	}
 	private sendHeatbeat(){
 		if(logDebug) logger.log(inspect`sendHeatbeat`);
+		this.debug();
 		this._external.write(Buffer.from([0, 0]));
 	}
 	private sendAcknowledge(nBytes:number){
@@ -155,8 +161,6 @@ class BaudotInterface extends Interface{
 		this.sendBuffered();
 	}
 	public sendBuffered(){
-		// tslint:disable-next-line:max-line-length
-		if(logDebug) logger.log(inspect`sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized} drained: ${this.drained}`);
 		
 		if(!this.initialized) return;
 
