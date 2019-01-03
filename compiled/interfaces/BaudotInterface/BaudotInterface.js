@@ -155,6 +155,7 @@ class BaudotInterface extends Interface_1.default {
         this.sendBuffered();
     }
     sendBuffered() {
+        this.debug();
         if (!this.initialized)
             return;
         if (this.writeBuffer.length > 0 && this.bytesSendable > 0) {
