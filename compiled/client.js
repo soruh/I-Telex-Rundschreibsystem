@@ -37,7 +37,7 @@ process.stdin
     .pipe(new noAutoCr())
     .pipe(process.stdout);
 socket.connect({ host: process.argv[2], port: parseInt(process.argv[3]) });
-baudotInterface.call('44');
+baudotInterface.call('42');
 baudotInterface.on('end', () => {
     socket.end();
     process.exit();

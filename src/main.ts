@@ -40,12 +40,6 @@ server.on('connection', socket=>{
 			interFace = new BaudotInterface();
 		}
 
-		interFace.external.write(chunk);
-
-		socket.pipe(interFace.external);
-		interFace.external.pipe(socket);
-	
-
 		logger.log(inspect`${interFace instanceof BaudotInterface?'baudot':'ascii'} client calling`);
 
 		interFace.on('end',()=>{
@@ -111,6 +105,11 @@ server.on('connection', socket=>{
 			handleClient();
 			logger.log(inspect`ascii client calling`);
 		}
+
+		interFace.external.write(chunk);
+		
+		socket.pipe(interFace.external);
+		interFace.external.pipe(socket);
 	});
 });
 server.listen(PORT, ()=>{
