@@ -74,6 +74,8 @@ server.on('connection', socket=>{
 			interFace.internal.write('\r\n\n');
 			interFace.internal.write("Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help\r\n");
 
+			interFace.internal.resume();
+
 			if(interFace instanceof BaudotInterface){
 				if(!interFace.drained){
 					await new Promise((resolve, reject) => {
