@@ -156,7 +156,7 @@ class BaudotInterface extends Interface{
 	}
 	public sendBuffered(){
 		// tslint:disable-next-line:max-line-length
-		if(logDebug) logger.log(inspect`sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized:${this.initialized}`);
+		if(logDebug) logger.log(inspect`sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized}`);
 		
 		if(!this.initialized) return;
 
@@ -177,9 +177,11 @@ class BaudotInterface extends Interface{
 		switch(type){
 			case 0: 
 				if(logDebug) logger.log(inspect`Heartbeat`);
-				// this.sendBuffered();
 				
-				if(!this.initialized) this.initialized = true;
+				if(!this.initialized){
+					this.initialized = true;
+					this.sendBuffered();
+				}
 				break;
 			case 1: 
 				if(logDebug) logger.log(inspect`Direct dial ${data[0]}`);
@@ -213,6 +215,7 @@ class BaudotInterface extends Interface{
 
 				if(!this.initialized&&this.bytesUnacknowleged === 0){
 					this.initialized = true;
+					this.sendBuffered();
 				}
 
 				this.sendBuffered();

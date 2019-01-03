@@ -151,7 +151,7 @@ class BaudotInterface extends Interface_1.default {
     sendBuffered() {
         // tslint:disable-next-line:max-line-length
         if (logDebug)
-            logging_1.logger.log(logging_1.inspect `sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized:${this.initialized}`);
+            logging_1.logger.log(logging_1.inspect `sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized}`);
         if (!this.initialized)
             return;
         if (this.writeBuffer.length > 0 && this.bytesSendable > 0) {
@@ -171,8 +171,10 @@ class BaudotInterface extends Interface_1.default {
             case 0:
                 if (logDebug)
                     logging_1.logger.log(logging_1.inspect `Heartbeat`);
-                // this.sendBuffered();
-                this.initialized = true;
+                if (!this.initialized) {
+                    this.initialized = true;
+                    this.sendBuffered();
+                }
                 break;
             case 1:
                 if (logDebug)
@@ -208,6 +210,7 @@ class BaudotInterface extends Interface_1.default {
                 this.bytesAcknowleged = data[0];
                 if (!this.initialized && this.bytesUnacknowleged === 0) {
                     this.initialized = true;
+                    this.sendBuffered();
                 }
                 this.sendBuffered();
                 if (this.bytesUnacknowleged === 0 && this.writeBuffer.length === 0 && this.drained === false) {
