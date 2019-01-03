@@ -102,6 +102,13 @@ class BaudotInterface extends Interface_1.default {
                 this.wasDrained = true;
             }
         }
+        else {
+            if (this.wasDrained) {
+                if (logDebug)
+                    logging_1.logger.log(logging_1.inspect `undrained`);
+                this.wasDrained = false;
+            }
+        }
         return drained;
     }
     resetTimeout() {

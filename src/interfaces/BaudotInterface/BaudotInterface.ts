@@ -119,6 +119,11 @@ class BaudotInterface extends Interface{
 				this.emit("drain");
 				this.wasDrained = true;
 			}
+		}else{
+			if(this.wasDrained){
+				if(logDebug) logger.log(inspect`undrained`);
+				this.wasDrained = false;
+			}
 		}
 		return drained;
 	}
