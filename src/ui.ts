@@ -98,7 +98,7 @@ const commands_main:CommandList = {
 
 			const newEntries = entries.filter(x=>!~callList.indexOf(x.number));
 			if(newEntries.length){
-				var response = newEntries.map(x=>`${x.number.toString().padStart(maxLength)}: ${x.name}`).join('\r\n')
+				var response = newEntries.map(x=>`${x.number.toString().padStart(maxLength)}: ${x.name}`).join('\r\n');
 			}else{
 				var response = 'no new entries found';
 			}

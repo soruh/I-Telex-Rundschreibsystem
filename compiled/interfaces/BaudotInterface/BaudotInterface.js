@@ -172,6 +172,7 @@ class BaudotInterface extends Interface_1.default {
                 if (logDebug)
                     logging_1.logger.log(logging_1.inspect `Heartbeat`);
                 // this.sendBuffered();
+                this.initialized = true;
                 break;
             case 1:
                 if (logDebug)

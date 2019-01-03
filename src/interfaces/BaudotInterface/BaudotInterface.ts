@@ -178,6 +178,8 @@ class BaudotInterface extends Interface{
 			case 0: 
 				if(logDebug) logger.log(inspect`Heartbeat`);
 				// this.sendBuffered();
+				
+				if(!this.initialized) this.initialized = true;
 				break;
 			case 1: 
 				if(logDebug) logger.log(inspect`Direct dial ${data[0]}`);
