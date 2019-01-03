@@ -120,7 +120,7 @@ class BaudotInterface extends Interface{
 				this.wasDrained = true;
 			}
 		}
-		return drained
+		return drained;
 	}
 
 	private resetTimeout(){
