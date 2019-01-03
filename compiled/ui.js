@@ -3,7 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const blacklist_1 = require("./blacklist");
 const commands_main = {
     'h': {
-        help: "prints this help",
+        // help: "prints this help",
+        help: null,
         argument: false,
         action: () => {
             return {
@@ -70,7 +71,8 @@ const commands_main = {
 };
 const commands_blacklist = {
     'h': {
-        help: "prints this help",
+        // help: "prints this help",
+        help: null,
         argument: false,
         action: () => {
             return {
@@ -140,7 +142,8 @@ function printHelp(mode) {
     helpString += "(command) (followed by a number?): (function)\r\n";
     for (const key in commandsForMode) {
         const command = commandsForMode[key];
-        helpString += `${key} (${command.argument ? '+' : '-'}): ${command.help}\r\n`;
+        if (command.help)
+            helpString += `${key} (${command.argument ? '+' : '-'}): ${command.help}\r\n`;
     }
     return helpString;
 }

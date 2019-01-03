@@ -9,16 +9,18 @@ const confirm_1 = require("./confirm");
 const config_1 = require("./config");
 function call(caller, numbers) {
     caller.interface.internal.write('\r\n');
-    let output = callGroup_1.default(numbers, (error, connections) => {
-        connections = connections.filter(x => x);
-        output.unpipe(caller.interface.internal);
+    const status = callGroup_1.default(numbers, (error, connections) => {
+        if (error) {
+            logging_1.logger.log('error', error);
+            throw error;
+        }
         // tslint:disable-next-line:max-line-length
         caller.interface.internal.write(`You are now connected to ${connections.length} peer${connections.length === 1 ? '' : 's'}. Type '+++' to end message\r\n`);
         for (let connection of connections) {
             connection.interface.internal.write('\r\n');
             caller.interface.internal.pipe(connection.interface.internal);
         }
-        let detector = new CallEndDetector_1.default();
+        const detector = new CallEndDetector_1.default();
         caller.interface.internal.pipe(detector);
         detector.emitter.on('end', () => {
             caller.interface.internal.unpipe(detector);
@@ -87,6 +89,13 @@ function call(caller, numbers) {
                 .catch(err => logging_1.logger.log(logging_1.inspect `confirmation error: ${err}`));
         });
     });
-    output.pipe(caller.interface.internal);
+    status.on('success', (number, res) => {
+        // caller.interface.internal.write(`${number} succeeeded: ${res.identifier.replace(/[\r\n]/g, '')}\r\n`);
+        caller.interface.internal.write(`${number}: ${res.identifier.replace(/[\r\n]/g, '')}\r\n`);
+    });
+    status.on('fail', (number, err) => {
+        // caller.interface.internal.write(`${number} failed: ${err}\r\n`);
+        caller.interface.internal.write(`${number}: ${err}\r\n`);
+    });
 }
 exports.default = call;

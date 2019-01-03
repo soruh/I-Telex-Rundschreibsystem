@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 // tslint:disable-next-line:max-line-length no-console triple-equals
-const stream_1 = require("stream");
 const net_1 = require("net");
 const util = require("util");
 const ITelexServerCom_1 = require("./util/ITelexServerCom");
@@ -10,13 +9,19 @@ const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface"
 const AsciiInterface_1 = require("./interfaces/AsciiInterface/AsciiInterface");
 const logging_1 = require("./util/logging");
 const confirm_1 = require("./confirm");
-const serialEachPromise_1 = require("./util/serialEachPromise");
-const config_1 = require("./config");
 const blacklist_1 = require("./blacklist");
-function callGroup(group, callback) {
-    const output = new stream_1.PassThrough();
-    serialEachPromise_1.default(group, (number, index) => new Promise(async (resolve, reject) => {
-        output.write(`calling: ${number}\r\n`);
+const events_1 = require("events");
+function explainErrorCode(code) {
+    switch (code) {
+        case 'EHOSTUNREACH':
+            return 'derailed';
+        default:
+            return code;
+    }
+}
+function callOne(number, index) {
+    return new Promise(async (resolve, reject) => {
+        // output.write(`calling: ${number}\r\n`);
         let peer;
         try {
             peer = await ITelexServerCom_1.peerQuery(number);
@@ -26,7 +31,7 @@ function callGroup(group, callback) {
         }
         let interFace;
         if (peer) {
-            output.write(`number found: ${peer.name}\r\n`);
+            // output.write(`number found: ${peer.name}\r\n`);
             switch (peer.type) {
                 case 1:
                 case 2:
@@ -39,16 +44,16 @@ function callGroup(group, callback) {
                     break;
                 case 6:
                 default:
-                    output.write("invalid client type\r\n\n");
+                    // output.write("invalid client type\r\n\n");
                     reject('invalid type');
                     return;
             }
             if (blacklist_1.isBlacklisted(number)) {
-                output.write(`${peer.name}(${peer.number}) has been blacklisted\r\n\n`);
+                // output.write(`${peer.name}(${peer.number}) has been blacklisted\r\n\n`);
                 reject('blacklisted');
                 return;
             }
-            output.write(`${config_1.DELIMITER}\r\n`);
+            // output.write(`${DELIMITER}\r\n`);
             if (interFace instanceof BaudotInterface_1.default) {
                 interFace.asciifier.on('modeChange', (newMode) => {
                     logging_1.logger.log(logging_1.inspect `new called client mode: ${newMode}`);
@@ -59,9 +64,9 @@ function callGroup(group, callback) {
             socket.pipe(interFace.external);
             interFace.external.pipe(socket);
             let timeout = setTimeout(() => {
-                output.write("timeout\r\n");
+                // output.write("timeout\r\n");
                 interFace.end();
-                output.write(`${config_1.DELIMITER}\r\n`);
+                // output.write(`${DELIMITER}\r\n`);
                 reject('timeout');
             }, 10000);
             socket.on('connect', () => {
@@ -71,17 +76,17 @@ function callGroup(group, callback) {
                 }
                 confirm_1.default(interFace.internal, timeout, +index)
                     .then(result => {
-                    output.write(result);
-                    output.write('\r\n');
-                    interFace.internal.unpipe(output);
+                    // output.write(result+'\r\n');
+                    // interFace.internal.unpipe(output);
                     // if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
                     let connection = {
                         socket,
                         name: peer.name,
                         number: peer.number,
                         interface: interFace,
+                        identifier: result,
                     };
-                    output.write(`\r\n${config_1.DELIMITER}\r\n`);
+                    // output.write(`\r\n${DELIMITER}\r\n`);
                     resolve(connection);
                 })
                     .catch(err => {
@@ -92,8 +97,8 @@ function callGroup(group, callback) {
                 clearTimeout(timeout);
                 interFace.end();
                 logging_1.logger.log(util.inspect(reason));
-                output.write(`${reason}`); // \r\n is included in reject message
-                output.write(`${config_1.DELIMITER}\r\n`);
+                // output.write(`${reason}`); // \r\n is included in reject message
+                // output.write(`${DELIMITER}\r\n`);
                 reject(reason);
             });
             socket.once('error', (err) => {
@@ -101,8 +106,8 @@ function callGroup(group, callback) {
                     case "EHOSTUNREACH":
                         clearTimeout(timeout);
                         interFace.end();
-                        output.write("derailed\r\n");
-                        output.write(`${config_1.DELIMITER}\r\n`);
+                        // output.write("derailed\r\n");
+                        // output.write(`${DELIMITER}\r\n`);
                         break;
                     default:
                         logging_1.logger.log('unexpected error: ' + err.code);
@@ -111,7 +116,7 @@ function callGroup(group, callback) {
             socket.on('error', (err) => {
                 socket.end();
                 logging_1.logger.log(logging_1.inspect `socket error: ${err}`);
-                reject(err);
+                reject(explainErrorCode(err.code));
             });
             socket.connect({
                 host: peer.hostname || peer.ipaddress,
@@ -120,12 +125,25 @@ function callGroup(group, callback) {
         }
         else {
             // output.write("--- 404 ---\r\n");
-            output.write("number not found\r\n\n");
+            // output.write("number not found\r\n\n");
             reject('not found');
         }
+    });
+}
+function callGroup(group, callback) {
+    const status = new events_1.EventEmitter();
+    Promise.all(group.map(async (number, index) => {
+        try {
+            const result = await callOne(number, index);
+            status.emit('success', number, result);
+            return result;
+        }
+        catch (err) {
+            status.emit('fail', number, err);
+        }
     }))
-        .then((clients) => callback(null, clients))
+        .then(clients => callback(null, clients.filter(x => x)))
         .catch(err => callback(err, null));
-    return output;
+    return status;
 }
 exports.default = callGroup;

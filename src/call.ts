@@ -1,4 +1,3 @@
-import { Duplex } from "stream";
 import { logger, inspect } from "./util/logging";
 import callGroup from "./callGroup";
 import CallEndDetector from "./CallEndDetector";
@@ -11,10 +10,12 @@ import Client from "./Client";
 function call(caller:Client, numbers:number[]){
 	caller.interface.internal.write('\r\n');
 
-	let output = callGroup(numbers, (error, connections)=>{
-		connections = connections.filter(x=>x);
+	const status = callGroup(numbers, (error, connections)=>{
+		if(error){
+			logger.log('error', error);
+			throw error;
+		}
 
-		output.unpipe(caller.interface.internal);
 		// tslint:disable-next-line:max-line-length
 		caller.interface.internal.write(`You are now connected to ${connections.length} peer${connections.length===1?'':'s'}. Type '+++' to end message\r\n`);
 		
@@ -23,7 +24,7 @@ function call(caller:Client, numbers:number[]){
 			caller.interface.internal.pipe(connection.interface.internal);
 		}
 
-		let detector = new CallEndDetector();
+		const detector = new CallEndDetector();
 		caller.interface.internal.pipe(detector);
 
 		detector.emitter.on('end', ()=>{
@@ -107,7 +108,15 @@ function call(caller:Client, numbers:number[]){
 			.catch(err=>logger.log(inspect`confirmation error: ${err}`));
 		});
 	});
-	output.pipe(caller.interface.internal);
+	status.on('success', (number, res)=>{
+		// caller.interface.internal.write(`${number} succeeeded: ${res.identifier.replace(/[\r\n]/g, '')}\r\n`);
+		caller.interface.internal.write(`${number}: ${res.identifier.replace(/[\r\n]/g, '')}\r\n`);
+	});
+
+	status.on('fail', (number, err)=>{
+		// caller.interface.internal.write(`${number} failed: ${err}\r\n`);
+		caller.interface.internal.write(`${number}: ${err}\r\n`);
+	});
 }
 
 export default call;

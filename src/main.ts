@@ -9,9 +9,8 @@ import AsciiInterface from "./interfaces/AsciiInterface/AsciiInterface";
 import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import ui from "./ui";
 import Interface from "./interfaces/Interface";
-import callGroup from "./callGroup";
-import CallEndDetector from "./CallEndDetector";
 import call from "./call";
+import { PORT } from "./constants";
 
 declare global {
 	interface Buffer {
@@ -108,6 +107,8 @@ server.on('connection', socket=>{
 		}
 	});
 });
-server.listen(4000);
+server.listen(PORT, ()=>{
+	logger.log(inspect`listening on port: ${PORT}`);
+});
 
 

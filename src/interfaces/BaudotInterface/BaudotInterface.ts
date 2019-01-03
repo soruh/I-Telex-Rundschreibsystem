@@ -17,13 +17,6 @@ const logDebug = LOGBAUDOTINTERFACE;
 function byteSize(value){
 	return Math.ceil(Math.log((value||1)+1)/Math.log(0x100));
 }
-function symbolName(s: symbol):string {
-	if(s && typeof s.toString === "function"){
-		return /Symbol\((.*)\)/.exec(s.toString())[1];
-	}else{
-		return "NULL";
-	}
-}
 
 function encodeExt(ext:string):number{
 	if (!ext) {
@@ -53,6 +46,8 @@ class BaudotInterface extends Interface{
 
 	private accepted = false;
 	
+	private initialized = false;
+
 	private bytesAcknowleged = 0;
 	private bytesSent = 0;
 	private bytesRecieved = 0;
@@ -161,9 +156,12 @@ class BaudotInterface extends Interface{
 	}
 	public sendBuffered(){
 		// tslint:disable-next-line:max-line-length
-		if(logDebug) logger.log(inspect`sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable}`);
+		if(logDebug) logger.log(inspect`sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized:${this.initialized}`);
+		
+		if(!this.initialized) return;
+
 		if(this.writeBuffer.length>0&&this.bytesSendable>0){
-			let data = this.writeBuffer.slice(0, this.bytesSendable);
+			const data = this.writeBuffer.slice(0, this.bytesSendable);
 			this.writeBuffer = this.writeBuffer.slice(this.bytesSendable);
 			this.packager.write(data);
 			// if(logDebug) logger.log(inspect`sent ${data.length} bytes`);
@@ -210,7 +208,13 @@ class BaudotInterface extends Interface{
 				if(logDebug) logger.log(inspect`Acknowledge ${data[0]}`);
 
 				this.bytesAcknowleged = data[0];
+
+				if(!this.initialized&&this.bytesUnacknowleged === 0){
+					this.initialized = true;
+				}
+
 				this.sendBuffered();
+
 				if(this.bytesUnacknowleged === 0&&this.writeBuffer.length === 0&&this.drained === false){
 					this.drained = true;
 					if(logDebug) logger.log('drained');

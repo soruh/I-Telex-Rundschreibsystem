@@ -22,7 +22,8 @@ interface CommandList{
 
 const commands_main:CommandList = {
 	'h': {
-		help: "prints this help",
+		// help: "prints this help",
+		help: null,
 		argument:false,
 		action: ()=>{
 			return {
@@ -92,7 +93,8 @@ const commands_main:CommandList = {
 
 const commands_blacklist:CommandList = {
 	'h': {
-		help: "prints this help",
+		// help: "prints this help",
+		help: null,
 		argument:false,
 		action: ()=>{
 			return {
@@ -168,7 +170,7 @@ function printHelp(mode:string){
 	helpString += "(command) (followed by a number?): (function)\r\n";
 	for(const key in commandsForMode){
 		const command = commandsForMode[key];
-		helpString += `${key} (${command.argument?'+':'-'}): ${command.help}\r\n`;
+		if(command.help) helpString += `${key} (${command.argument?'+':'-'}): ${command.help}\r\n`;
 	}
 
 	return helpString;

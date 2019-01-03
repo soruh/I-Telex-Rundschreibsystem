@@ -15,14 +15,6 @@ const logDebug = config_1.LOGBAUDOTINTERFACE;
 function byteSize(value) {
     return Math.ceil(Math.log((value || 1) + 1) / Math.log(0x100));
 }
-function symbolName(s) {
-    if (s && typeof s.toString === "function") {
-        return /Symbol\((.*)\)/.exec(s.toString())[1];
-    }
-    else {
-        return "NULL";
-    }
-}
 function encodeExt(ext) {
     if (!ext) {
         return 0;
@@ -52,6 +44,7 @@ class BaudotInterface extends Interface_1.default {
         this.writeBuffer = Buffer.alloc(0);
         this.drained = true;
         this.accepted = false;
+        this.initialized = false;
         this.bytesAcknowleged = 0;
         this.bytesSent = 0;
         this.bytesRecieved = 0;
@@ -158,9 +151,11 @@ class BaudotInterface extends Interface_1.default {
     sendBuffered() {
         // tslint:disable-next-line:max-line-length
         if (logDebug)
-            logging_1.logger.log(logging_1.inspect `sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable}`);
+            logging_1.logger.log(logging_1.inspect `sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized:${this.initialized}`);
+        if (!this.initialized)
+            return;
         if (this.writeBuffer.length > 0 && this.bytesSendable > 0) {
-            let data = this.writeBuffer.slice(0, this.bytesSendable);
+            const data = this.writeBuffer.slice(0, this.bytesSendable);
             this.writeBuffer = this.writeBuffer.slice(this.bytesSendable);
             this.packager.write(data);
             // if(logDebug) logger.log(inspect`sent ${data.length} bytes`);
@@ -210,6 +205,9 @@ class BaudotInterface extends Interface_1.default {
                 if (logDebug)
                     logging_1.logger.log(logging_1.inspect `Acknowledge ${data[0]}`);
                 this.bytesAcknowleged = data[0];
+                if (!this.initialized && this.bytesUnacknowleged === 0) {
+                    this.initialized = true;
+                }
                 this.sendBuffered();
                 if (this.bytesUnacknowleged === 0 && this.writeBuffer.length === 0 && this.drained === false) {
                     this.drained = true;
