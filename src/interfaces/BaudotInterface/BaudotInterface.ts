@@ -42,7 +42,7 @@ class BaudotInterface extends Interface{
 	private chunker = new ChunkPackages();
 
 	private writeBuffer = Buffer.alloc(0);
-	public  drained = true;
+	private wasDrained = true;
 
 	private accepted = false;
 	
@@ -77,6 +77,7 @@ class BaudotInterface extends Interface{
 
 		this.baudotifier.on("data", (data:Buffer)=>{
 			this.writeBuffer = Buffer.concat([this.writeBuffer, data]);
+
 			this.sendBuffered();
 		});
 		
@@ -103,6 +104,23 @@ class BaudotInterface extends Interface{
 	public debug(){
 		// tslint:disable-next-line:max-line-length
 		if(logDebug) logger.log(inspect`bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized} drained: ${this.drained}`);
+	}
+
+	get drained(){
+		return this.isDrained();
+	}
+
+	public isDrained(){
+		const drained = this.bytesUnacknowleged === 0&&this.writeBuffer.length === 0;
+		if(drained){
+			if(!this.wasDrained){
+				if(logDebug) logger.log(inspect`drained`);
+
+				this.emit("drain");
+				this.wasDrained = true;
+			}
+		}
+		return drained
 	}
 
 	private resetTimeout(){
@@ -157,8 +175,9 @@ class BaudotInterface extends Interface{
 	}
 	public write(string:string){
 		if(logDebug) logger.log(inspect`sendString string: ${string.length} ${util.inspect(string)}`);
-		this.baudotifier.write(string);
-		this.sendBuffered();
+		this.baudotifier.write(string, ()=>{
+			this.sendBuffered();
+		});
 	}
 	public sendBuffered(){
 		this.debug();
@@ -171,7 +190,7 @@ class BaudotInterface extends Interface{
 			// if(logDebug) logger.log(inspect`sent ${data.length} bytes`);
 			this.bytesSent = (this.bytesSent + data.length) % 0x100;
 
-			this.drained = false;
+			this.isDrained(); // update drainage status
 
 			this.emit("send", data);
 		}
@@ -224,11 +243,7 @@ class BaudotInterface extends Interface{
 
 				this.sendBuffered();
 
-				if(this.bytesUnacknowleged === 0&&this.writeBuffer.length === 0&&this.drained === false){
-					this.drained = true;
-					if(logDebug) logger.log('drained');
-					this.emit("drain");
-				}
+				this.isDrained(); // update drainage status
 				break;
 			case 7: 
 				if(logDebug) logger.log(inspect`Version ${data[0]} ${Buffer.from(data).readNullTermString(void(0), 1)}`);
@@ -246,7 +261,7 @@ class BaudotInterface extends Interface{
 	}
 
 	public end(){
-		if(this.drained){
+		if(this.isDrained()){
 			if(logDebug) logger.log(inspect`ending baudotinterface`);
 			try{
 				this.sendEnd();

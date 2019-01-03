@@ -42,7 +42,7 @@ class BaudotInterface extends Interface_1.default {
         this.packager = new PackageBaudotData_1.default();
         this.chunker = new ChunkPackages_1.default();
         this.writeBuffer = Buffer.alloc(0);
-        this.drained = true;
+        this.wasDrained = true;
         this.accepted = false;
         this.initialized = false;
         this.bytesAcknowleged = 0;
@@ -88,6 +88,21 @@ class BaudotInterface extends Interface_1.default {
         // tslint:disable-next-line:max-line-length
         if (logDebug)
             logging_1.logger.log(logging_1.inspect `bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized} drained: ${this.drained}`);
+    }
+    get drained() {
+        return this.isDrained();
+    }
+    isDrained() {
+        const drained = this.bytesUnacknowleged === 0 && this.writeBuffer.length === 0;
+        if (drained) {
+            if (!this.wasDrained) {
+                if (logDebug)
+                    logging_1.logger.log(logging_1.inspect `drained`);
+                this.emit("drain");
+                this.wasDrained = true;
+            }
+        }
+        return drained;
     }
     resetTimeout() {
         if (logDebug)
@@ -151,8 +166,9 @@ class BaudotInterface extends Interface_1.default {
     write(string) {
         if (logDebug)
             logging_1.logger.log(logging_1.inspect `sendString string: ${string.length} ${util.inspect(string)}`);
-        this.baudotifier.write(string);
-        this.sendBuffered();
+        this.baudotifier.write(string, () => {
+            this.sendBuffered();
+        });
     }
     sendBuffered() {
         this.debug();
@@ -164,7 +180,7 @@ class BaudotInterface extends Interface_1.default {
             this.packager.write(data);
             // if(logDebug) logger.log(inspect`sent ${data.length} bytes`);
             this.bytesSent = (this.bytesSent + data.length) % 0x100;
-            this.drained = false;
+            this.isDrained(); // update drainage status
             this.emit("send", data);
         }
     }
@@ -216,12 +232,7 @@ class BaudotInterface extends Interface_1.default {
                     this.initialized = true;
                 }
                 this.sendBuffered();
-                if (this.bytesUnacknowleged === 0 && this.writeBuffer.length === 0 && this.drained === false) {
-                    this.drained = true;
-                    if (logDebug)
-                        logging_1.logger.log('drained');
-                    this.emit("drain");
-                }
+                this.isDrained(); // update drainage status
                 break;
             case 7:
                 if (logDebug)
@@ -242,7 +253,7 @@ class BaudotInterface extends Interface_1.default {
         }
     }
     end() {
-        if (this.drained) {
+        if (this.isDrained()) {
             if (logDebug)
                 logging_1.logger.log(logging_1.inspect `ending baudotinterface`);
             try {
