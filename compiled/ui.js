@@ -1,11 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const blacklist_1 = require("./blacklist");
+const ITelexServerCom_1 = require("./util/ITelexServerCom");
 const commands_main = {
     'h': {
         // help: "prints this help",
         help: null,
-        argument: false,
+        needsNumber: null,
         action: () => {
             return {
                 end: false,
@@ -15,7 +16,7 @@ const commands_main = {
     },
     '+': {
         help: "add a number to call list",
-        argument: true,
+        needsNumber: true,
         action: (number, callList) => {
             if (callList.indexOf(number) === -1) {
                 callList.push(number);
@@ -27,7 +28,7 @@ const commands_main = {
     },
     '-': {
         help: "remove a number from call list",
-        argument: true,
+        needsNumber: true,
         action: (number, callList) => {
             const index = callList.indexOf(number);
             if (index > -1) {
@@ -40,7 +41,7 @@ const commands_main = {
     },
     '?': {
         help: "print call list",
-        argument: false,
+        needsNumber: null,
         action: (number, callList) => {
             return {
                 end: false,
@@ -50,7 +51,7 @@ const commands_main = {
     },
     'b': {
         help: "modify blacklist",
-        argument: false,
+        needsNumber: null,
         action: () => {
             return {
                 end: false,
@@ -60,11 +61,40 @@ const commands_main = {
     },
     '=': {
         help: "call numbers in call list",
-        argument: false,
+        needsNumber: null,
         action: (number, callList) => {
             return {
                 end: true,
                 nextAction: 'call',
+            };
+        },
+    },
+    's': {
+        help: "search for numbers (not in the call list) by name",
+        needsNumber: false,
+        action: async (number, callList, answer) => {
+            const entries = await ITelexServerCom_1.Peer_search(answer);
+            const maxLength = Math.max(...entries.map(x => x.number.toString().length));
+            const newEntries = entries.filter(x => !~callList.indexOf(x.number));
+            if (newEntries.length) {
+                var response = newEntries.map(x => `${x.number.toString().padStart(maxLength)}: ${x.name}`).join('\r\n');
+            }
+            else {
+                var response = 'no new entries found';
+            }
+            return {
+                end: false,
+                response,
+            };
+        },
+    },
+    'q': {
+        help: "end the connection",
+        needsNumber: null,
+        action: () => {
+            return {
+                end: true,
+                nextAction: 'end',
             };
         },
     },
@@ -73,7 +103,7 @@ const commands_blacklist = {
     'h': {
         // help: "prints this help",
         help: null,
-        argument: false,
+        needsNumber: null,
         action: () => {
             return {
                 end: false,
@@ -83,7 +113,7 @@ const commands_blacklist = {
     },
     '.': {
         help: "(un-)blacklist a number",
-        argument: true,
+        needsNumber: true,
         action: async (number) => {
             if (!number) {
                 throw new Error('not a Number');
@@ -98,7 +128,7 @@ const commands_blacklist = {
     },
     '?': {
         help: "test if a number is blacklisted",
-        argument: true,
+        needsNumber: true,
         action: number => {
             return {
                 end: false,
@@ -108,7 +138,7 @@ const commands_blacklist = {
     },
     'b': {
         help: "go back to the main menu",
-        argument: false,
+        needsNumber: null,
         action: () => {
             return {
                 end: false,
@@ -139,11 +169,13 @@ function printHelp(mode) {
     if (!commandsForMode)
         throw new Error("invalid mode");
     let helpString = `help for mode: ${mode}\r\n\n`;
-    helpString += "(command) (followed by a number?): (function)\r\n";
+    helpString += "(command) (type of argument): (function)\r\n";
     for (const key in commandsForMode) {
         const command = commandsForMode[key];
-        if (command.help)
-            helpString += `${key} (${command.argument ? '+' : '-'}): ${command.help}\r\n`;
+        if (command.help) {
+            const argType = command.needsNumber === null ? ' ' : (command.needsNumber ? 'n' : 't');
+            helpString += `${key} (${argType}): ${command.help}\r\n`;
+        }
     }
     return helpString;
 }
@@ -158,8 +190,11 @@ async function handleCommand(input, mode, callList) {
         throw new Error("invalid mode");
     if (commandsForMode.hasOwnProperty(identifier)) {
         try {
-            if (commandsForMode[identifier].argument && !number) {
+            if (commandsForMode[identifier].needsNumber === true && !number) {
                 throw new Error('no number specified.');
+            }
+            else if (commandsForMode[identifier].needsNumber === false && !answer) {
+                throw new Error('no argument specified.');
             }
             return await commandsForMode[identifier].action(number, callList, answer);
         }
@@ -179,7 +214,7 @@ async function handleCommand(input, mode, callList) {
 }
 function ui(readline) {
     return new Promise((resolve, reject) => {
-        readline.output.write("Type commands followed by a number if needed. LF to confirm\r\nh for help\r\n");
+        readline.output.write("Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help\r\n");
         let mode = 'main';
         let callList = [];
         function promptCommand() {

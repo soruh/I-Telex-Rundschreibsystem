@@ -61,6 +61,11 @@ server.on('connection', socket => {
                     }, result.callList);
                     break;
                 case 'end':
+                    rl.close();
+                    interFace.end();
+                    setTimeout(() => {
+                        socket.end();
+                    }, 1000);
                 default:
                 // TODO: end the connection
             }

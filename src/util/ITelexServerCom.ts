@@ -367,9 +367,56 @@ function peerQuery(number:number):Promise<PackageData_decoded_5>{
 			try{
 				socket.write(
 					encPackage({
-						type:3,
+						type:0x03,
 						data:{
 							number,
+							version:1,
+						},
+					})
+				);
+			}catch(err){
+				reject(err);
+			}
+		});
+	});
+}
+
+function Peer_search(pattern:string):Promise<PackageData_decoded_5[]>{
+	return new Promise((resolve, reject)=>{
+		let socket = new net.Socket();
+		let chunker = new ChunkPackages();
+		socket.pipe(chunker);
+		socket.on('timeout',()=>{
+			reject(new Error('server timed out'));
+		});
+		socket.on('close', ()=>{
+			reject(new Error('connection to server was closed'));
+		});
+		let list = [];
+		chunker.on('data', (data:Buffer)=>{
+			let pkg = decPackage(data);
+			if(!pkg){
+				return;
+			}
+			if(pkg.type === 5){
+				list.push(pkg.data);
+				socket.write(encPackage({type:0x08}));
+			}else if(pkg.type === 9){
+				socket.end();
+				resolve(list);
+			}else{
+				reject(new Error('invalid server result'));
+			}
+		});
+
+		socket.connect(TlnServer, ()=>{
+			socket.setTimeout(10*1000);
+			try{
+				socket.write(
+					encPackage({
+						type:0x0a,
+						data:{
+							pattern,
 							version:1,
 						},
 					})
@@ -484,6 +531,7 @@ function dynIpUpdate(number:number, pin:number, port:number):Promise<string>{
 export {
 	//#region functions
 	// getCompletePackages,
+	Peer_search,
 	fullQuery,
 	decPackage,
 	encPackage,
