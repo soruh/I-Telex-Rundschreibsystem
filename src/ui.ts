@@ -1,6 +1,7 @@
 import { ReadLine } from "readline";
 import { isBlacklisted, updateBlacklistForNumber } from "./blacklist";
 import { Peer_search } from "./util/ITelexServerCom";
+import { logger } from "./util/logging";
 
 interface commandResult{
 	end?:boolean;
@@ -235,6 +236,7 @@ async function handleCommand(input:string, mode:string, callList:number[]):Promi
 			};
 		}
 	}else{
+		logger.log(`invalid command: ${answer}`);
 		return {
 			end: false,
 			response: "invalid command",

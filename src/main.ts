@@ -78,9 +78,13 @@ server.on('connection', socket=>{
 
 			if(interFace instanceof BaudotInterface){
 				if(!interFace.drained){
+					logger.log('waiting for drain');
 					await new Promise((resolve, reject) => {
 						interFace.on('drain', resolve);
 					});
+					logger.log('drained');
+				}else{
+					logger.log('was already drained');
 				}
 			}
 

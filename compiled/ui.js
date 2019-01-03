@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const blacklist_1 = require("./blacklist");
 const ITelexServerCom_1 = require("./util/ITelexServerCom");
+const logging_1 = require("./util/logging");
 const commands_main = {
     'h': {
         // help: "prints this help",
@@ -206,6 +207,7 @@ async function handleCommand(input, mode, callList) {
         }
     }
     else {
+        logging_1.logger.log(`invalid command: ${answer}`);
         return {
             end: false,
             response: "invalid command",
