@@ -214,16 +214,15 @@ class BaudotInterface extends Interface{
 
 				this.bytesAcknowleged = data[0];
 
-				if(!this.initialized&&this.bytesUnacknowleged === 0){
+				if(this.bytesUnacknowleged === 0){
 					this.initialized = true;
-					this.sendBuffered();
 				}
 
 				this.sendBuffered();
 
 				if(this.bytesUnacknowleged === 0&&this.writeBuffer.length === 0&&this.drained === false){
-					if(logDebug) logger.log('drained');
 					this.drained = true;
+					if(logDebug) logger.log('drained');
 					this.emit("drain");
 				}
 				break;

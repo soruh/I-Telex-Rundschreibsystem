@@ -75,6 +75,7 @@ server.on('connection', socket=>{
 		});
 	
 		async function handleClient(){
+			interFace.internal.write('\r\n\n');
 			const result = await ui(rl);
 			switch(result.nextAction){
 				case 'call':
