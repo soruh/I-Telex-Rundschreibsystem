@@ -85,14 +85,13 @@ server.on('connection', socket=>{
 
 					break;
 				case 'end':
+				default:
 					rl.close();
 					interFace.end();
 					
 					setTimeout(()=>{
 						socket.end();
 					}, 1000);
-				default:
-					// TODO: end the connection
 			}
 		}
 

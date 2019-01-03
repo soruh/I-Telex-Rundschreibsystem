@@ -58,13 +58,12 @@ server.on('connection', socket => {
                     }, result.callList);
                     break;
                 case 'end':
+                default:
                     rl.close();
                     interFace.end();
                     setTimeout(() => {
                         socket.end();
                     }, 1000);
-                default:
-                // TODO: end the connection
             }
         }
         if (interFace instanceof BaudotInterface_1.default) {
