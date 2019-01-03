@@ -219,6 +219,7 @@ function ui(readline) {
         let callList = [];
         function promptCommand() {
             readline.question('- ', async (answer) => {
+                readline.output.write('\r');
                 const result = await handleCommand(answer, mode, callList);
                 if (result.response)
                     readline.output.write(result.response + '\r\n');

@@ -156,7 +156,7 @@ class BaudotInterface extends Interface{
 	}
 	public sendBuffered(){
 		// tslint:disable-next-line:max-line-length
-		if(logDebug) logger.log(inspect`sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized}`);
+		if(logDebug) logger.log(inspect`sendBuffered bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized} drained: ${this.drained}`);
 		
 		if(!this.initialized) return;
 
@@ -166,6 +166,7 @@ class BaudotInterface extends Interface{
 			this.packager.write(data);
 			// if(logDebug) logger.log(inspect`sent ${data.length} bytes`);
 			this.bytesSent = (this.bytesSent + data.length) % 0x100;
+
 			this.drained = false;
 
 			this.emit("send", data);
@@ -221,8 +222,8 @@ class BaudotInterface extends Interface{
 				this.sendBuffered();
 
 				if(this.bytesUnacknowleged === 0&&this.writeBuffer.length === 0&&this.drained === false){
-					this.drained = true;
 					if(logDebug) logger.log('drained');
+					this.drained = true;
 					this.emit("drain");
 				}
 				break;
@@ -262,7 +263,7 @@ class BaudotInterface extends Interface{
 			this.emit("end");
 		}else{
 			if(logDebug) logger.log(inspect`not ending baudotinterface, because it is not drained yet.`);
-			this.on('drain', this.end);
+			this.once('drain', this.end);
 		}
 	}
 } 
