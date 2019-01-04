@@ -164,13 +164,16 @@ function callOne(number:number, index:number){
 						// output.write("derailed\r\n");
 						// output.write(`${DELIMITER}\r\n`);
 						break;
+					case "ERR_STREAM_WRITE_AFTER_END":
+						// ignore
+						break;
 					default:
 						logger.log('unexpected error: '+err.code);
 				}
 			});
 
 			socket.on('error', (err)=>{
-				if(err.message === "ERR_STREAM_WRITE_AFTER_END") return;
+				if((err as Error&{code:string}).code === "ERR_STREAM_WRITE_AFTER_END") return;
 				
 				socket.end();
 				logger.log(inspect`socket error: ${err}`);

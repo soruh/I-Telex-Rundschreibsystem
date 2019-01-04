@@ -127,12 +127,15 @@ function callOne(number, index) {
                         // output.write("derailed\r\n");
                         // output.write(`${DELIMITER}\r\n`);
                         break;
+                    case "ERR_STREAM_WRITE_AFTER_END":
+                        // ignore
+                        break;
                     default:
                         logging_1.logger.log('unexpected error: ' + err.code);
                 }
             });
             socket.on('error', (err) => {
-                if (err.message === "ERR_STREAM_WRITE_AFTER_END")
+                if (err.code === "ERR_STREAM_WRITE_AFTER_END")
                     return;
                 socket.end();
                 logging_1.logger.log(logging_1.inspect `socket error: ${err}`);
