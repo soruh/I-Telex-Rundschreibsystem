@@ -71,11 +71,11 @@ function callOne(number:number, index:number){
 
 			// output.write(`${DELIMITER}\r\n`);
 
-			if(interFace instanceof BaudotInterface){
-				interFace.asciifier.on('modeChange', (newMode)=>{
-					logger.log(inspect`new called client mode: ${newMode}`);
-				});
-			}
+			// if(interFace instanceof BaudotInterface){
+			// 	interFace.asciifier.on('modeChange', (newMode)=>{
+			// 		logger.log(inspect`new called client mode: ${newMode}`);
+			// 	});
+			// }
 
 			// output.write('valid client type\r\n');
 
@@ -150,6 +150,8 @@ function callOne(number:number, index:number){
 			});
 
 			socket.on('error', (err)=>{
+				if(err.message === "ERR_STREAM_WRITE_AFTER_END") return;
+				
 				socket.end();
 				logger.log(inspect`socket error: ${err}`);
 				reject(explainErrorCode((err as Error&{code:string}).code));
@@ -158,7 +160,7 @@ function callOne(number:number, index:number){
 			socket.on('close', ()=>{
 				interFace.end();
 				
-				logger.log(inspect`calling client disconnected`);
+				logger.log(inspect`called client disconnected`);
 			});
 
 			socket.connect({

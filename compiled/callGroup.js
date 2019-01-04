@@ -54,11 +54,11 @@ function callOne(number, index) {
                 return;
             }
             // output.write(`${DELIMITER}\r\n`);
-            if (interFace instanceof BaudotInterface_1.default) {
-                interFace.asciifier.on('modeChange', (newMode) => {
-                    logging_1.logger.log(logging_1.inspect `new called client mode: ${newMode}`);
-                });
-            }
+            // if(interFace instanceof BaudotInterface){
+            // 	interFace.asciifier.on('modeChange', (newMode)=>{
+            // 		logger.log(inspect`new called client mode: ${newMode}`);
+            // 	});
+            // }
             // output.write('valid client type\r\n');
             let socket = new net_1.Socket();
             socket.pipe(interFace.external);
@@ -114,13 +114,15 @@ function callOne(number, index) {
                 }
             });
             socket.on('error', (err) => {
+                if (err.message === "ERR_STREAM_WRITE_AFTER_END")
+                    return;
                 socket.end();
                 logging_1.logger.log(logging_1.inspect `socket error: ${err}`);
                 reject(explainErrorCode(err.code));
             });
             socket.on('close', () => {
                 interFace.end();
-                logging_1.logger.log(logging_1.inspect `calling client disconnected`);
+                logging_1.logger.log(logging_1.inspect `called client disconnected`);
             });
             socket.connect({
                 host: peer.hostname || peer.ipaddress,
