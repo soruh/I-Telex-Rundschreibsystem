@@ -69,10 +69,28 @@ function callOne(number, index) {
                 // output.write(`${DELIMITER}\r\n`);
                 reject('timeout');
             }, 10000);
-            socket.on('connect', () => {
+            socket.on('connect', async () => {
                 if (!(interFace instanceof AsciiInterface_1.default && peer.extension === null)) {
                     logging_1.logger.log('calling: ' + peer.extension);
                     interFace.call(peer.extension);
+                }
+                if (interFace instanceof BaudotInterface_1.default) {
+                    interFace.internal.resume();
+                    await new Promise((resolve, reject) => {
+                        setTimeout(resolve, 100);
+                    });
+                    if (interFace.drained) {
+                        logging_1.logger.log('was already drained');
+                    }
+                    else {
+                        logging_1.logger.log('waiting for drain');
+                        await new Promise((resolve, reject) => {
+                            interFace.on('drain', () => {
+                                resolve();
+                            });
+                        });
+                        logging_1.logger.log('drained');
+                    }
                 }
                 confirm_1.default(interFace.internal, timeout, +index)
                     .then(result => {

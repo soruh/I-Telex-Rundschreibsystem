@@ -93,11 +93,31 @@ function callOne(number:number, index:number){
 				reject('timeout');
 			}, 10000);
 
-			socket.on('connect', ()=>{
+			socket.on('connect', async ()=>{
 
 				if(!(interFace instanceof AsciiInterface&&peer.extension === null)){
 					logger.log('calling: '+peer.extension);
 					interFace.call(peer.extension);
+				}
+
+				if(interFace instanceof BaudotInterface){
+					interFace.internal.resume();
+					
+					await new Promise((resolve, reject) => { // TODO: check if/how long this is needed
+						setTimeout(resolve, 100);
+					});
+
+					if(interFace.drained){
+						logger.log('was already drained');
+					}else{
+						logger.log('waiting for drain');
+						await new Promise((resolve, reject) => {
+							interFace.on('drain', ()=>{
+								resolve();
+							});
+						});
+						logger.log('drained');
+					}
 				}
 
 				confirm(interFace.internal, timeout, +index)
