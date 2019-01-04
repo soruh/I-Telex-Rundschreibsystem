@@ -125,7 +125,9 @@ server.on('connection', socket=>{
 			logger.log(inspect`ascii client calling`);
 		}
 
-		interFace.external.write(chunk);
+		if(interFace instanceof BaudotInterface){
+			interFace.external.write(chunk); // only retransmit chunk, if it is baudot data
+		}
 		
 		socket.pipe(interFace.external);
 		interFace.external.pipe(socket);
