@@ -10,6 +10,7 @@ const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface"
 const ui_1 = require("./ui");
 const call_1 = require("./call");
 const config_1 = require("./config");
+const baudot_1 = require("./util/baudot");
 Buffer.prototype.readNullTermString =
     function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
         let firstZero = this.indexOf(0, start);
@@ -55,6 +56,8 @@ server.on('connection', socket => {
                         interFace.on('drain', resolve);
                     });
                     logging_1.logger.log('drained');
+                    interFace.asciifier.setMode(baudot_1.baudotModeUnknown);
+                    interFace.baudotifier.setMode(baudot_1.baudotModeUnknown);
                 }
                 else {
                     logging_1.logger.log('was already drained');

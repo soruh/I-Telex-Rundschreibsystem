@@ -14,6 +14,12 @@ function call(caller:Client, numbers:number[]){
 			throw error;
 		}
 
+		caller.interface.on('end', ()=>{
+			for(let connection of connections){
+				connection.socket.end('+++');
+			}
+		});
+
 		// tslint:disable-next-line:max-line-length
 		caller.interface.internal.write(`You are now connected to ${connections.length} peer${connections.length===1?'':'s'}. Type '+++' to end message\r\n`);
 		

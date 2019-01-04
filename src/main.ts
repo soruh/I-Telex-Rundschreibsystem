@@ -11,6 +11,7 @@ import ui from "./ui";
 import Interface from "./interfaces/Interface";
 import call from "./call";
 import { PORT } from "./config";
+import { baudotModeUnknown } from "./util/baudot";
 
 declare global {
 	interface Buffer {
@@ -79,6 +80,10 @@ server.on('connection', socket=>{
 						interFace.on('drain', resolve);
 					});
 					logger.log('drained');
+
+					interFace.asciifier.setMode(baudotModeUnknown);
+					interFace.baudotifier.setMode(baudotModeUnknown);
+
 				}else{
 					logger.log('was already drained');
 				}
