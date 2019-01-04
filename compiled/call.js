@@ -80,7 +80,7 @@ function call(caller, numbers) {
             logging_1.logger.log("confirmed all peers");
             caller.interface.internal.write('\r\nconfirmed all peers\r\n\r\n');
             caller.interface.end();
-            caller.socket.end();
+            caller.socket.destroy();
         });
     });
     status.on('success', (number, res) => {

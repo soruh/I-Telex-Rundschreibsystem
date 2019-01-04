@@ -3,6 +3,7 @@
 
 import * as stream from 'stream';
 import duplex from './duplexer';
+import { logger } from './logging';
 
 class Bridge {
 	public A:stream.Duplex;
@@ -18,6 +19,14 @@ class Bridge {
 
 		this.A = duplex(A_WRITE, A_READ);
 		this.B = duplex(B_WRITE, B_READ);
+
+		this.A.on('error', err=>{
+			logger.log('Bridge stream A error:', err);
+		});
+
+		this.B.on('error', err=>{
+			logger.log('Bridge stream B error:', err);
+		});
 	}
 }
 
