@@ -6,10 +6,17 @@ const CallEndDetector_1 = require("./CallEndDetector");
 const confirm_1 = require("./confirm");
 function call(caller, numbers) {
     caller.interface.internal.write('\r\n');
+    caller.interface.internal.write(`calling ${numbers.length} numbers:`);
     const status = callGroup_1.default(numbers, (error, connections) => {
         if (error) {
             logging_1.logger.log('error', error);
             throw error;
+        }
+        if (connections.length === 0) {
+            caller.interface.internal.write('No peers could be reached.\r\n');
+            caller.interface.end();
+            caller.socket.destroy();
+            return;
         }
         caller.interface.on('end', () => {
             for (let connection of connections) {
@@ -17,7 +24,7 @@ function call(caller, numbers) {
             }
         });
         // tslint:disable-next-line:max-line-length
-        caller.interface.internal.write(`You are now connected to ${connections.length} peer${connections.length === 1 ? '' : 's'}. Type '+++' to end message\r\n`);
+        caller.interface.internal.write(`Now connected to ${connections.length} peer${connections.length === 1 ? '' : 's'}. Type '+++' to end message\r\n`);
         for (let connection of connections) {
             connection.interface.internal.write('\r\n');
             caller.interface.internal.pipe(connection.interface.internal);
@@ -29,7 +36,8 @@ function call(caller, numbers) {
             for (let connection of connections) {
                 caller.interface.internal.pipe(connection.interface.internal);
             }
-            caller.interface.internal.write(`\r\n\nStopped transmitting message\r\n`);
+            // tslint:disable-next-line:max-line-length
+            caller.interface.internal.write(`\r\n\ntransmission over. confirming ${connections.length} peer${connections.length === 1 ? '' : 's'}.\r\n`);
             logging_1.logger.log("message ended");
             // logger.log(connections);
             let promises = [];
@@ -78,7 +86,7 @@ function call(caller, numbers) {
             }
             await Promise.all(promises);
             logging_1.logger.log("confirmed all peers");
-            caller.interface.internal.write('\r\nconfirmed all peers\r\n\r\n');
+            caller.interface.internal.write('\r\nconfirmation finished\r\n\r\n');
             caller.interface.end();
             caller.socket.destroy();
         });
