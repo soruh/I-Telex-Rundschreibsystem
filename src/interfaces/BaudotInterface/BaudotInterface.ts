@@ -9,7 +9,7 @@ import ChunkPackages from "../../util/ChunkPackages";
 import BaudotToAscii from "./BaudotToAscii";
 import AsciiToBaudot from "./AsciiToBaudot";
 import PackageBaudotData from "./PackageBaudotData";
-import { LOGBAUDOTINTERFACE } from "../../../config.json";
+import { LOGBAUDOTINTERFACE } from "../../config";
 
 
 const logDebug = LOGBAUDOTINTERFACE;

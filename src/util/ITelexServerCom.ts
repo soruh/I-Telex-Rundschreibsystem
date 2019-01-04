@@ -1,6 +1,6 @@
 import APIcall from "./APICall";
 import { PackageData_decoded_5 } from "./ITelexServerComTypes";
-import { TLN_SERVER_HOST, TLN_SERVER_PORT } from "../../config.json";
+import { TLN_SERVER_HOST, TLN_SERVER_PORT } from "../config";
 
 
 async function peerQuery(number:number):Promise<PackageData_decoded_5>{

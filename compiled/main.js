@@ -9,7 +9,7 @@ const AsciiInterface_1 = require("./interfaces/AsciiInterface/AsciiInterface");
 const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface");
 const ui_1 = require("./ui");
 const call_1 = require("./call");
-const config_json_1 = require("../config.json");
+const config_1 = require("./config");
 Buffer.prototype.readNullTermString =
     function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
         let firstZero = this.indexOf(0, start);
@@ -96,6 +96,6 @@ server.on('connection', socket => {
         interFace.external.pipe(socket);
     });
 });
-server.listen(config_json_1.PORT, () => {
-    logging_1.logger.log(logging_1.inspect `listening on port: ${config_json_1.PORT}`);
+server.listen(config_1.PORT, () => {
+    logging_1.logger.log(logging_1.inspect `listening on port: ${config_1.PORT}`);
 });

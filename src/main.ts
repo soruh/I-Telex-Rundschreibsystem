@@ -10,7 +10,7 @@ import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import ui from "./ui";
 import Interface from "./interfaces/Interface";
 import call from "./call";
-import { PORT } from "../config.json";
+import { PORT } from "./config";
 
 declare global {
 	interface Buffer {
