@@ -206,7 +206,8 @@ class BaudotInterface extends Interface{
 		switch(type){
 			case 0: 
 				if(logDebug) logger.log(inspect`Heartbeat`);
-				
+				this.emit("ack", null);
+
 				if(!this.initialized){
 					this.initialized = true;
 					this.sendBuffered();
@@ -239,6 +240,7 @@ class BaudotInterface extends Interface{
 				break;
 			case 6: 
 				if(logDebug) logger.log(inspect`Acknowledge ${data[0]}`);
+				this.emit("ack", data[0]);
 
 				this.bytesAcknowleged = data[0];
 

@@ -103,25 +103,26 @@ function callOne(number:number, index:number){
 				if(interFace instanceof BaudotInterface){
 					interFace.internal.resume();
 					
-					await new Promise((resolve, reject) => { // TODO: check if/how long this is needed
-						setTimeout(resolve, 2000);
-					});
-
-					if(interFace.drained){
-						logger.log('was already drained');
-					}else{
-						logger.log('waiting for drain');
-						await new Promise((resolve, reject) => {
-							interFace.on('drain', ()=>{
+					await new Promise((resolve, reject) => {
+						interFace.once('ack', (x)=>{
+							logger.log(`initial ack: ${x}`);
+							if((interFace as BaudotInterface).drained){
+								logger.log('was already drained');
 								resolve();
-							});
+							}else{
+								logger.log('waiting for drain');
+								interFace.on('drain', ()=>{
+									resolve();
+									logger.log('drained');
+								});
+							}
 						});
-						logger.log('drained');
-					}
+					});
 				}
 
-				confirm(interFace.internal, timeout, +index)
-				.then(result=>{
+				try{
+					const result = await confirm(interFace.internal, timeout, +index);
+
 					// output.write(result+'\r\n');
 
 					// interFace.internal.unpipe(output);
@@ -138,10 +139,9 @@ function callOne(number:number, index:number){
 
 					// output.write(`\r\n${DELIMITER}\r\n`);
 					resolve(connection);
-				})
-				.catch(err=>{
+				}catch(err){
 					logger.log(inspect`error: ${err}`);
-				});
+				}
 			});
 
 			interFace.on('reject', reason=>{

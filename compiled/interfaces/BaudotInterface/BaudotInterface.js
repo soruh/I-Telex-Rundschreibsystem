@@ -198,6 +198,7 @@ class BaudotInterface extends Interface_1.default {
             case 0:
                 if (logDebug)
                     logging_1.logger.log(logging_1.inspect `Heartbeat`);
+                this.emit("ack", null);
                 if (!this.initialized) {
                     this.initialized = true;
                     this.sendBuffered();
@@ -234,6 +235,7 @@ class BaudotInterface extends Interface_1.default {
             case 6:
                 if (logDebug)
                     logging_1.logger.log(logging_1.inspect `Acknowledge ${data[0]}`);
+                this.emit("ack", data[0]);
                 this.bytesAcknowleged = data[0];
                 if (this.bytesUnacknowleged === 0) {
                     this.initialized = true;

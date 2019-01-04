@@ -77,23 +77,24 @@ function callOne(number, index) {
                 if (interFace instanceof BaudotInterface_1.default) {
                     interFace.internal.resume();
                     await new Promise((resolve, reject) => {
-                        setTimeout(resolve, 2000);
-                    });
-                    if (interFace.drained) {
-                        logging_1.logger.log('was already drained');
-                    }
-                    else {
-                        logging_1.logger.log('waiting for drain');
-                        await new Promise((resolve, reject) => {
-                            interFace.on('drain', () => {
+                        interFace.once('ack', (x) => {
+                            logging_1.logger.log(`initial ack: ${x}`);
+                            if (interFace.drained) {
+                                logging_1.logger.log('was already drained');
                                 resolve();
-                            });
+                            }
+                            else {
+                                logging_1.logger.log('waiting for drain');
+                                interFace.on('drain', () => {
+                                    resolve();
+                                    logging_1.logger.log('drained');
+                                });
+                            }
                         });
-                        logging_1.logger.log('drained');
-                    }
+                    });
                 }
-                confirm_1.default(interFace.internal, timeout, +index)
-                    .then(result => {
+                try {
+                    const result = await confirm_1.default(interFace.internal, timeout, +index);
                     // output.write(result+'\r\n');
                     // interFace.internal.unpipe(output);
                     // if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
@@ -106,10 +107,10 @@ function callOne(number, index) {
                     };
                     // output.write(`\r\n${DELIMITER}\r\n`);
                     resolve(connection);
-                })
-                    .catch(err => {
+                }
+                catch (err) {
                     logging_1.logger.log(logging_1.inspect `error: ${err}`);
-                });
+                }
             });
             interFace.on('reject', reason => {
                 clearTimeout(timeout);
