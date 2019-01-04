@@ -10,8 +10,8 @@ const ChunkPackages_1 = require("../../util/ChunkPackages");
 const BaudotToAscii_1 = require("./BaudotToAscii");
 const AsciiToBaudot_1 = require("./AsciiToBaudot");
 const PackageBaudotData_1 = require("./PackageBaudotData");
-const config_1 = require("../../config");
-const logDebug = config_1.LOGBAUDOTINTERFACE;
+const config_json_1 = require("../../../config.json");
+const logDebug = config_json_1.LOGBAUDOTINTERFACE;
 function byteSize(value) {
     return Math.ceil(Math.log((value || 1) + 1) / Math.log(0x100));
 }

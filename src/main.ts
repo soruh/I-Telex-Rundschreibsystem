@@ -10,7 +10,7 @@ import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import ui from "./ui";
 import Interface from "./interfaces/Interface";
 import call from "./call";
-import { PORT } from "./constants";
+import { PORT } from "../config.json";
 
 declare global {
 	interface Buffer {
@@ -28,10 +28,6 @@ function readNullTermString(encoding: string = "utf8", start: number = 0, end: n
 
 const server = new net.Server();
 server.on('connection', socket=>{
-
-
-
-
 	let interFace:Interface;
 	socket.once('data', chunk=>{
 		if([0,1,2,3,4,6,7,8,9].indexOf(chunk[0]) === -1){

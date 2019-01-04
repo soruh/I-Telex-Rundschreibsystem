@@ -155,6 +155,12 @@ function callOne(number:number, index:number){
 				reject(explainErrorCode((err as Error&{code:string}).code));
 			});
 
+			socket.on('close', ()=>{
+				interFace.end();
+				
+				logger.log(inspect`calling client disconnected`);
+			});
+
 			socket.connect({
 				host: peer.hostname||peer.ipaddress,
 				port: parseInt(peer.port),

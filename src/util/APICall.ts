@@ -1,6 +1,7 @@
 import * as https from "https";
 import { logger, inspect } from "./logging";
 
+// tslint:disable-next-line:no-var-requires
 const servercert = require('fs').readFileSync(require('path').join(__dirname, '../..', 'servercert.pem'));
 
 function APIcall(method:string, host:string, port:number, path:string, data={}):Promise<any>{
@@ -49,11 +50,7 @@ function APIcall(method:string, host:string, port:number, path:string, data={}):
 					try{
 						const {error} = JSON.parse(buffer);
 						if(error) logger.log('error', inspect`API call failed with error message: ${error}`);
-					}catch(err){
-						console.error(err);
-						console.log(buffer);
-						/*fail silently*/
-					}
+					}catch(err){/*fail silently*/}
 
 					
 					reject(inspect`${res.statusCode} (${res.statusMessage})`);

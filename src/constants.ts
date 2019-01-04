@@ -3,9 +3,7 @@
 
 
 const MAX_BAUDOT_DATA_SIZE = 16;
-const PORT = 4000;
 
 export {
 	MAX_BAUDOT_DATA_SIZE,
-	PORT,
 };

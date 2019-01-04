@@ -118,6 +118,10 @@ function callOne(number, index) {
                 logging_1.logger.log(logging_1.inspect `socket error: ${err}`);
                 reject(explainErrorCode(err.code));
             });
+            socket.on('close', () => {
+                interFace.end();
+                logging_1.logger.log(logging_1.inspect `calling client disconnected`);
+            });
             socket.connect({
                 host: peer.hostname || peer.ipaddress,
                 port: parseInt(peer.port),

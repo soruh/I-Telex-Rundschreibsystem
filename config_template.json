@@ -1,0 +1,6 @@
+{
+	"LOGBAUDOTINTERFACE": false,
+	"PORT": 4000,
+	"TLN_SERVER_HOST": "telexgateway.de",
+	"TLN_SERVER_PORT": 11812
+}

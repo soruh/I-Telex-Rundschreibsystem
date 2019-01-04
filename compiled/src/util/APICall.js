@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const https = require("https");
 const logging_1 = require("./logging");
+// tslint:disable-next-line:no-var-requires
 const servercert = require('fs').readFileSync(require('path').join(__dirname, '../..', 'servercert.pem'));
 function APIcall(method, host, port, path, data = {}) {
     return new Promise((resolve, reject) => {
@@ -46,11 +47,7 @@ function APIcall(method, host, port, path, data = {}) {
                         if (error)
                             logging_1.logger.log('error', logging_1.inspect `API call failed with error message: ${error}`);
                     }
-                    catch (err) {
-                        console.error(err);
-                        console.log(buffer);
-                        /*fail silently*/
-                    }
+                    catch (err) { /*fail silently*/ }
                     reject(logging_1.inspect `${res.statusCode} (${res.statusMessage})`);
                     return;
                 }

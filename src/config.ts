@@ -1,6 +1,0 @@
-const LOGBAUDOTINTERFACE = true;
-
-
-export {
-	LOGBAUDOTINTERFACE
-};
