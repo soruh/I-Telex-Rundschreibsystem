@@ -113,7 +113,7 @@ function call(caller:Client, numbers:number[]){
 			await Promise.all(promises);
 
 			logger.log("confirmed all peers");
-			caller.interface.internal.write('\r\nconfirmation finished\r\n\r\n');
+			caller.interface.internal.write('confirmation finished\r\n\r\n');
 
 			caller.interface.end();
 			caller.socket.destroy();
