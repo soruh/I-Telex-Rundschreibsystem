@@ -6,7 +6,7 @@ const CallEndDetector_1 = require("./CallEndDetector");
 const confirm_1 = require("./confirm");
 function call(caller, numbers) {
     caller.interface.internal.write('\r\n');
-    caller.interface.internal.write(`calling ${numbers.length} numbers:`);
+    caller.interface.internal.write(`calling ${numbers.length} numbers:\r\n`);
     const status = callGroup_1.default(numbers, (error, connections) => {
         if (error) {
             logging_1.logger.log('error', error);

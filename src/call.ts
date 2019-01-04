@@ -8,7 +8,7 @@ import Client from "./Client";
 function call(caller:Client, numbers:number[]){
 	caller.interface.internal.write('\r\n');
 
-	caller.interface.internal.write(`calling ${numbers.length} numbers:`);
+	caller.interface.internal.write(`calling ${numbers.length} numbers:\r\n`);
 	const status = callGroup(numbers, (error, connections)=>{
 		if(error){
 			logger.log('error', error);
