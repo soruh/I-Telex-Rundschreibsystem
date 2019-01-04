@@ -104,7 +104,7 @@ function callOne(number:number, index:number){
 					interFace.internal.resume();
 					
 					await new Promise((resolve, reject) => { // TODO: check if/how long this is needed
-						setTimeout(resolve, 100);
+						setTimeout(resolve, 2000);
 					});
 
 					if(interFace.drained){

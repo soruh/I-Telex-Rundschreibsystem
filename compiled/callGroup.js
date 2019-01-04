@@ -77,7 +77,7 @@ function callOne(number, index) {
                 if (interFace instanceof BaudotInterface_1.default) {
                     interFace.internal.resume();
                     await new Promise((resolve, reject) => {
-                        setTimeout(resolve, 100);
+                        setTimeout(resolve, 2000);
                     });
                     if (interFace.drained) {
                         logging_1.logger.log('was already drained');
