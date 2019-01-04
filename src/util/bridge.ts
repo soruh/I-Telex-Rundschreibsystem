@@ -21,10 +21,12 @@ class Bridge {
 		this.B = duplex(B_WRITE, B_READ);
 
 		this.A.on('error', err=>{
+			if((err as Error&{code: string}).code === "ERR_STREAM_WRITE_AFTER_END") return;
 			logger.log('Bridge stream A error:', err);
 		});
 
 		this.B.on('error', err=>{
+			if((err as Error&{code: string}).code === "ERR_STREAM_WRITE_AFTER_END") return;
 			logger.log('Bridge stream B error:', err);
 		});
 	}

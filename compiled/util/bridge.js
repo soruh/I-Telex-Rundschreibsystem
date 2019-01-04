@@ -16,9 +16,13 @@ class Bridge {
         this.A = duplexer_1.default(A_WRITE, A_READ);
         this.B = duplexer_1.default(B_WRITE, B_READ);
         this.A.on('error', err => {
+            if (err.code === "ERR_STREAM_WRITE_AFTER_END")
+                return;
             logging_1.logger.log('Bridge stream A error:', err);
         });
         this.B.on('error', err => {
+            if (err.code === "ERR_STREAM_WRITE_AFTER_END")
+                return;
             logging_1.logger.log('Bridge stream B error:', err);
         });
     }
