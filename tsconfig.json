@@ -6,8 +6,9 @@
         "target": "esnext",
         "outDir": "compiled/",
         //"allowJs": true,
-        "resolveJsonModule": true,
+        // "resolveJsonModule": true,
         "alwaysStrict": true,
+        
 
         //"noUnusedLocals": true,
         //"noUnusedParameters": true
