@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const logging_1 = require("./util/logging");
 const callGroup_1 = require("./callGroup");
 const CallEndDetector_1 = require("./CallEndDetector");
-const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface");
 const confirm_1 = require("./confirm");
 function call(caller, numbers) {
     caller.interface.internal.write('\r\n');
@@ -80,17 +79,8 @@ function call(caller, numbers) {
             await Promise.all(promises);
             logging_1.logger.log("confirmed all peers");
             caller.interface.internal.write('\r\nconfirmed all peers\r\n\r\n');
-            if (caller.interface instanceof BaudotInterface_1.default) {
-                caller.interface.sendEnd();
-                setTimeout(() => {
-                    caller.interface.end();
-                    caller.socket.end();
-                }, 2000);
-            }
-            else {
-                caller.interface.end();
-                caller.socket.end();
-            }
+            caller.interface.end();
+            caller.socket.end();
         });
     });
     status.on('success', (number, res) => {

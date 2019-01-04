@@ -105,16 +105,8 @@ function call(caller:Client, numbers:number[]){
 			logger.log("confirmed all peers");
 			caller.interface.internal.write('\r\nconfirmed all peers\r\n\r\n');
 
-			if(caller.interface instanceof BaudotInterface){
-				caller.interface.sendEnd();
-				setTimeout(()=>{
-					caller.interface.end();
-					caller.socket.end();
-				}, 2000);
-			}else{
-				caller.interface.end();
-				caller.socket.end();
-			}
+			caller.interface.end();
+			caller.socket.end();
 		});
 	});
 	status.on('success', (number, res)=>{
