@@ -18,7 +18,7 @@ if(!process.argv[2]||!process.argv[3]) throw('USAGE:\nnode client.js host port')
 (logger as any) = {log:()=>{}};
 
 let socket = new Socket();
-let baudotInterface = new BaudotInterface();
+let baudotInterface = new BaudotInterface(logger, ["\x1b[32m", "client", "\x1b[0m"]);
 
 
 class noAutoCr extends Transform{
@@ -34,6 +34,15 @@ class addCr extends Transform{
 	}
 }
 
+socket.once('close', ()=>{
+	process.stdout.write("\n<connection closed>\n");
+	process.exit();
+});
+
+socket.on('error', ()=>{
+	//
+});
+
 socket
 	.pipe(baudotInterface.external)
 	.pipe(socket);
@@ -47,7 +56,12 @@ process.stdin
 socket.connect({host:process.argv[2], port:parseInt(process.argv[3])});
 baudotInterface.call('42');
 
-baudotInterface.on('end', ()=>{
+baudotInterface.on('request end', ()=>{
+	process.stdout.write("\n<connection end requested>\n");
 	socket.end();
-	process.exit();
+});
+
+baudotInterface.on('end', ()=>{
+	process.stdout.write("\n<interface ended>\n");
+	socket.end();
 });

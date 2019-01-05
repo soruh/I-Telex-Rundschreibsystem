@@ -8,7 +8,7 @@ import Client from "./Client";
 function call(caller:Client, numbers:number[]){
 	caller.interface.internal.write('\r\n');
 
-	caller.interface.internal.write(`calling ${numbers.length} numbers:\r\n`);
+	caller.interface.internal.write(`calling ${numbers.length} number${numbers.length===1?'':'s'}:\r\n`);
 	const status = callGroup(numbers, (error, connections)=>{
 		if(error){
 			logger.log('error', error);
@@ -17,17 +17,21 @@ function call(caller:Client, numbers:number[]){
 
 		if(connections.length === 0){
 			caller.interface.internal.write('No peers could be reached.\r\n');
-			caller.interface.end();
-			caller.socket.destroy();
+			
+
+			caller.interface.once('end', ()=>caller.socket.destroy());
+			caller.interface.end(); // end the interface
 
 			return;
 		}
 
-		caller.interface.on('end', ()=>{
+		function handleAbort(){
 			for(let connection of connections){
 				connection.socket.end('+++');
 			}
-		});
+		}
+
+		caller.interface.once('end', handleAbort);
 
 		// tslint:disable-next-line:max-line-length
 		caller.interface.internal.write(`Now connected to ${connections.length} peer${connections.length===1?'':'s'}. Type '+++' to end message\r\n`);
@@ -115,8 +119,10 @@ function call(caller:Client, numbers:number[]){
 			logger.log("confirmed all peers");
 			caller.interface.internal.write('confirmation finished\r\n\r\n');
 
-			caller.interface.end();
-			caller.socket.destroy();
+			caller.interface.removeListener('end', handleAbort); // don't handle aborts if not aborted
+
+			caller.interface.once('end', ()=>caller.socket.destroy());
+			caller.interface.end(); // end the interface
 		});
 	});
 

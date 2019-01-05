@@ -80,7 +80,7 @@ async function updateBlacklistForNumber(number) {
             case 1:
             case 2:
             case 5:
-                interFace = new BaudotInterface_1.default();
+                interFace = new BaudotInterface_1.default(logging_1.logger, ["\x1b[90m", "blacklist", "\x1b[0m"]);
                 break;
             case 3:
             case 4:
@@ -95,8 +95,6 @@ async function updateBlacklistForNumber(number) {
             output: interFace.internal,
         });
         let socket = new net_1.Socket();
-        socket.pipe(interFace.external);
-        interFace.external.pipe(socket);
         socket.on('error', err => {
             socket.end();
             logging_1.logger.log(logging_1.inspect `called client error: ${err}`);
@@ -129,15 +127,15 @@ async function updateBlacklistForNumber(number) {
             });
         }
         socket.connect({ host: peer.ipaddress || peer.hostname, port: +peer.port }, () => {
+            socket.pipe(interFace.external);
+            interFace.external.pipe(socket);
+            interFace.call(peer.extension);
             interFace.internal.write("Rundschreibsystem:\r\n");
             confirmBlacklisting();
         });
         setTimeout(() => {
+            interFace.once('end', () => socket.destroy());
             interFace.end(); // end the interface
-            setTimeout(() => {
-                socket.destroy(); // remove the tcp socket 1 second later, to give it time to flush
-                // TODO: do this on('flush')?
-            }, 1000);
         }, 5 * 60 * 1000);
     }, 60 * 1000);
 }

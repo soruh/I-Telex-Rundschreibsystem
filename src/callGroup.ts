@@ -9,7 +9,7 @@ import { peerQuery } from "./util/ITelexServerCom";
 import Interface from "./interfaces/Interface";
 import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import AsciiInterface from "./interfaces/AsciiInterface/AsciiInterface";
-import { logger, inspect } from "./util/logging";
+import { logger, inspect, logStream } from "./util/logging";
 import confirm from "./confirm";
 import { isBlacklisted } from "./blacklist";
 import { PackageData_decoded_5 } from "./util/ITelexServerComTypes";
@@ -32,7 +32,7 @@ function explainErrorCode(code:string){ // TODO: add more codes
 	}
 }
 
-function callOne(number:number, index:number){
+function callOne(number:number, index:number, numbers:number[]){
 	return new Promise<Connection>(async (resolve, reject)=>{
 		// output.write(`calling: ${number}\r\n`);
 
@@ -46,11 +46,12 @@ function callOne(number:number, index:number){
 		let interFace:Interface;
 		if(peer){
 			// output.write(`number found: ${peer.name}\r\n`);
+			const padding = (numbers.length-1).toString().length;
 			switch(peer.type){
 				case 1: 
 				case 2: 
 				case 5:
-					interFace = new BaudotInterface();
+					interFace = new BaudotInterface(logger, ["\x1b[34m", `called ${index.toString().padStart(padding)}`, "\x1b[0m"]);
 					break;
 				case 3:
 				case 4:
@@ -62,6 +63,12 @@ function callOne(number:number, index:number){
 					reject('invalid type');
 					return;
 			}
+
+			// tslint:disable-next-line:max-line-length
+			const logStreamIn  = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[033m in\x1b[0m`, interFace.internal);
+			// tslint:disable-next-line:max-line-length
+			const logStreamOut = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[034mout\x1b[0m`, interFace._internal);
+
 
 			if(isBlacklisted(number)){
 				// output.write(`${peer.name}(${peer.number}) has been blacklisted\r\n\n`);
@@ -183,6 +190,9 @@ function callOne(number:number, index:number){
 			socket.on('close', ()=>{
 				interFace.end();
 				
+				logStreamIn.end();
+				logStreamOut.end();
+
 				logger.log(inspect`called client disconnected`);
 			});
 
@@ -205,7 +215,7 @@ function callGroup(group:number[], callback:(err:Error, connections:Connection[]
 	Promise.all(group.map(
 		async (number, index)=>{
 			try{
-				const result = await callOne(number, index);
+				const result = await callOne(number, index, group);
 				status.emit('success', number, result);
 
 				return result;

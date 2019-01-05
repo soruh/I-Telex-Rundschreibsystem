@@ -3,16 +3,16 @@
 
 import { baudotModeBu, changeModeBu } from "../../util/baudot";
 import * as util from "util"; // TODO remove?
-import { inspect, logger } from "../../util/logging";
 import Interface from "../Interface";
 import ChunkPackages from "../../util/ChunkPackages";
 import BaudotToAscii from "./BaudotToAscii";
 import AsciiToBaudot from "./AsciiToBaudot";
 import PackageBaudotData from "./PackageBaudotData";
 import { LOGBAUDOTINTERFACE } from "../../config";
+import { inspect } from "../../util/logging";
 
 
-const logDebug = LOGBAUDOTINTERFACE;
+const logDebugDefault = LOGBAUDOTINTERFACE;
 
 function byteSize(value){
 	return Math.ceil(Math.log((value||1)+1)/Math.log(0x100));
@@ -52,6 +52,8 @@ class BaudotInterface extends Interface{
 	private bytesSent = 0;
 	private bytesRecieved = 0;
 
+	public ended = false;
+
 	private baudotTimeout = setTimeout(()=>this.onTimeout(), 30*1000);
 	private pulse = setInterval(()=>this.sendHeatbeat(), this.pulseRate);
 
@@ -63,15 +65,42 @@ class BaudotInterface extends Interface{
 		return sendable<0?0:sendable;
 	}
 
-	constructor(){
+	public name:string = '?';
+	public logger:{log:(...args:any)=>void} = console;
+	public logDebug = logDebugDefault;
+
+	constructor(logger?:{log:(...args:any)=>void}, name?:string|string[], logDebug?:number){
 		super();
 
+		let fullName:string;
+		if(name){
+			if(name instanceof Array){
+				switch(name.length){
+					case 0:
+						break;
+					case 1:
+						name[0] = name[0].padEnd(10);
+						break;
+					default:
+						name[1] = name[1].padStart(10);
+				}
+
+				fullName = name.join('');
+			}else{
+				fullName = name;
+			}
+		}
+
+		if(fullName) this.name = fullName;
+		if(logger) this.logger = logger;
+		if(logDebug !== undefined) this.logDebug = logDebug;
+
 		this.asciifier.on('modeChange', (mode:symbol)=>{
-			// if(logDebug) logger.log(inspect`asciifier modeChange to ${symbolName(mode)}`);
+			// this.debug(inspect`asciifier modeChange to ${symbolName(mode)}`);
 			this.baudotifier.setMode(mode);
 		});
 		this.baudotifier.on('modeChange', (mode:symbol)=>{
-			// if(logDebug) logger.log(inspect`baudotifier modeChange to ${symbolName(mode)}`);
+			// this.debug(inspect`baudotifier modeChange to ${symbolName(mode)}`);
 			this.asciifier.setMode(mode);
 		});
 
@@ -86,11 +115,15 @@ class BaudotInterface extends Interface{
 		this._external.pipe(this.chunker);
 		this.asciifier.pipe(this._internal);
 		
-		this.chunker.on('data', (data:number[])=>this.baudotDataListener(data));
+		this.chunker.on('data', (data:number[])=>{
+			this.debug(`BaudotInterface ${this.name} recieved data: ${util.inspect(data)}`, 3);
+
+			this.baudotDataListener(data);
+		});
 		this._internal.on("data", data=>this.write(data.toString()));
 
 		this._external.on('end',()=>{
-			if(logDebug) logger.log("outside ended");
+			this.debug("outside ended");
 			this.end(); // disallow reconnection
 		});
 
@@ -99,11 +132,60 @@ class BaudotInterface extends Interface{
 
 		this.external.on("close",()=>logger.log("outside closed"));
 		this.internal.on("close",()=>logger.log("inside closed"));
+
+		this.printDebugString();
 	}
 
-	public debug(){
+
+	public debug(text:string, verbosity=2){
+		if(verbosity <= this.logDebug){
+			this.logger.log(`BaudotInterface ${this.name.padStart(14)}: `+text);
+		}
+	}
+
+	public printDebugString(){
+		function printTruthy(value:any, overwrite?:string){
+			let padding = 0;
+			switch(typeof value){
+				case 'boolean':
+					padding = 5;
+					break;
+				case 'number':
+					padding = 3;
+					break;
+			}
+
+			return (overwrite||(value?'\x1b[32m':'\x1b[31m'))+value.toString().padStart(padding)+'\x1b[0m';
+		}
+
 		// tslint:disable-next-line:max-line-length
-		if(logDebug) logger.log(inspect`bytesSent: ${this.bytesSent} bytesAcknowleged: ${this.bytesAcknowleged} bytesUnacknowleged: ${this.bytesUnacknowleged} buffered: ${this.writeBuffer.length} sendable: ${this.bytesSendable} initialized: ${this.initialized} drained: ${this.drained}`);
+		const values = {
+			sent: this.bytesSent,
+			acknowleged: this.bytesAcknowleged,
+			unacknowleged: this.bytesUnacknowleged,
+			buffered: this.writeBuffer.length,
+			sendable: this.bytesSendable,
+
+			initialized: this.initialized,
+			drained: this.drained,
+			ended: this.ended,
+		};
+		let pairs = [];
+
+		let overwrite = null;
+		if(this.bytesSent !== this.bytesAcknowleged) overwrite = "\x1b[36m";
+
+		for(let key in values){
+			let value = values[key];
+
+			let needOverwrite = false;
+			if(key === "sent"||key === "acknowleged") needOverwrite = true;
+
+			pairs.push([key, printTruthy(value, needOverwrite?overwrite:null)]); 
+		}
+
+		// tslint:disable-next-line:max-line-length
+		this.debug(pairs.map(([key, value])=>`${key}: ${value}`).join(' | '), 1);
 	}
 
 	get drained(){
@@ -114,14 +196,14 @@ class BaudotInterface extends Interface{
 		const drained = this.bytesUnacknowleged === 0&&this.writeBuffer.length === 0;
 		if(drained){
 			if(!this.wasDrained){
-				if(logDebug) logger.log(inspect`drained`);
+				this.debug(inspect`drained`);
 
 				this.emit("drain");
 				this.wasDrained = true;
 			}
 		}else{
 			if(this.wasDrained){
-				if(logDebug) logger.log(inspect`undrained`);
+				this.debug(inspect`undrained`);
 				this.wasDrained = false;
 			}
 		}
@@ -129,22 +211,21 @@ class BaudotInterface extends Interface{
 	}
 
 	private resetTimeout(){
-		if(logDebug) logger.log("resetTimeout");
+		this.debug(inspect`resetTimeout`);
 		clearTimeout(this.baudotTimeout);
 		this.baudotTimeout = setTimeout(()=>this.onTimeout(), 30*1000);
 	}
 	private onTimeout(){
-		if(logDebug) logger.log("onTimeout");
+		this.debug("onTimeout");
 		this.emit("timeout");
-		this.sendEnd();
-		this.end();
+		this.end(true);
 	}
 	public sendEnd(){
-		if(logDebug) logger.log(inspect`sendEnd`);
+		this.debug(inspect`sendEnd`);
 		this._external.write(Buffer.from([3, 0]));
 	}
 	public sendReject(reason:string){
-		if(logDebug) logger.log(inspect`sendReject`);
+		this.debug(inspect`sendReject`);
 		let size = reason.length>20?20:reason.length;
 		let buffer = Buffer.alloc(size);
 		buffer[0] = 4;
@@ -153,20 +234,20 @@ class BaudotInterface extends Interface{
 		this._external.write(buffer);
 	}
 	private sendDirectDial(extension:number){
-		if(logDebug) logger.log(inspect`sendDirectDial extension:${extension}`);
+		this.debug(inspect`sendDirectDial extension: ${extension}`);
 		if(extension<110&&extension>=0) this._external.write(Buffer.from([1, 1, extension]));
 	}
 	private sendHeatbeat(){
-		if(logDebug) logger.log(inspect`sendHeatbeat`);
-		this.debug();
+		this.debug(inspect`sendHeatbeat`);
+		this.printDebugString();
 		this._external.write(Buffer.from([0, 0]));
 	}
 	private sendAcknowledge(nBytes:number){
-		if(logDebug) logger.log(inspect`sendAcknowledge ${nBytes}`);
+		this.debug(inspect`sendAcknowledge ${nBytes}`);
 		this._external.write(Buffer.from([6, 1, nBytes]));
 	}
 	private sendVersion(value:number){
-		if(logDebug) logger.log(inspect`sendVersion version: ${value}`);
+		this.debug(inspect`sendVersion version: ${value}`);
 		this._external.write(Buffer.from([7, byteSize(value), value]));
 	}
 	public accept(){
@@ -179,20 +260,21 @@ class BaudotInterface extends Interface{
 		this.sendDirectDial(encodeExt(extension));
 	}
 	public write(string:string){
-		if(logDebug) logger.log(inspect`sendString string: ${string.length} ${util.inspect(string)}`);
+		this.debug(inspect`sendString string: ${string.length} ${util.inspect(string)}`);
 		this.baudotifier.write(string, ()=>{
 			this.sendBuffered();
 		});
 	}
 	public sendBuffered(){
-		this.debug();
+		this.printDebugString();
 		if(!this.initialized) return;
 
 		if(this.writeBuffer.length>0&&this.bytesSendable>0){
 			const data = this.writeBuffer.slice(0, this.bytesSendable);
+
 			this.writeBuffer = this.writeBuffer.slice(this.bytesSendable);
 			this.packager.write(data);
-			// if(logDebug) logger.log(inspect`sent ${data.length} bytes`);
+			// this.debug(inspect`sent ${data.length} bytes`);
 			this.bytesSent = (this.bytesSent + data.length) % 0x100;
 
 			this.isDrained(); // update drainage status
@@ -205,7 +287,7 @@ class BaudotInterface extends Interface{
 		// logger.log(type, data);
 		switch(type){
 			case 0: 
-				if(logDebug) logger.log(inspect`Heartbeat`);
+				this.debug(inspect`Heartbeat`);
 				this.emit("ack", null);
 
 				if(!this.initialized){
@@ -214,12 +296,12 @@ class BaudotInterface extends Interface{
 				}
 				break;
 			case 1: 
-				if(logDebug) logger.log(inspect`Direct dial ${data[0]}`);
+				this.debug(inspect`Direct dial ${data[0]}`);
 				// this.accepted();
 				this.emit("call", data[0]);
 				break;
 			case 2: 
-				if(logDebug) logger.log(inspect`Baudot data ${data.length} bytes`);
+				this.debug(inspect`Baudot data ${data.length} bytes`);
 				this.asciifier.write(Buffer.from(data));
 				this.bytesRecieved = (this.bytesRecieved + data.length) % 0x100;
 				this.sendAcknowledge(this.bytesRecieved);
@@ -229,17 +311,19 @@ class BaudotInterface extends Interface{
 				}
 				break;
 			case 3: 
-				if(logDebug) logger.log(inspect`End`);
+				this.debug(inspect`End`);
+				this.emit('request end');
 				this.end();
 
 				break;
 			case 4: 
-				if(logDebug) logger.log(inspect`Reject ${Buffer.from(data).toString()}`);
+				this.debug(inspect`Reject ${Buffer.from(data).toString()}`);
 				this.emit("reject", Buffer.from(data).toString());
+				this.emit('request end');
 				this.end();
 				break;
 			case 6: 
-				if(logDebug) logger.log(inspect`Acknowledge ${data[0]}`);
+				this.debug(inspect`Acknowledge ${data[0]}`);
 				this.emit("ack", data[0]);
 
 				this.bytesAcknowleged = data[0];
@@ -253,23 +337,32 @@ class BaudotInterface extends Interface{
 				this.isDrained(); // update drainage status
 				break;
 			case 7: 
-				if(logDebug) logger.log(inspect`Version ${data[0]} ${Buffer.from(data).readNullTermString(void(0), 1)}`);
+				this.debug(inspect`Version ${data[0]} ${Buffer.from(data).readNullTermString(void(0), 1)}`);
 				if(data[0] !== this.version) this.sendVersion(this.version);
 			 break;
 			case 8: 
-				if(logDebug) logger.log(inspect`Self test ${data.map(x=>x.toString(16).padStart(2, '0'))}`);
+				this.debug(inspect`Self test ${data.map(x=>x.toString(16).padStart(2, '0'))}`);
 				break;
 			case 9: 
-			   	if(logDebug) logger.log(inspect`Remote config`);
+			   	this.debug(inspect`Remote config`);
 			   	break;
 			default:
-				logger.log(inspect`unknown package type: ${type} data: ${data}`);
+				this.debug(inspect`unknown package type: ${type} data: ${data}`);
 		}
 	}
 
-	public end(){
-		if(this.isDrained()){
-			if(logDebug) logger.log(inspect`ending baudotinterface`);
+	public end(force=false){
+		this.debug(inspect`end`);
+
+		if(this.ended){
+			this.debug(inspect`already ended`);
+			return;
+		}
+		
+		if(force||this.isDrained()){
+			this.ended = true;
+
+			this.debug(inspect`ending baudotinterface ${this.isDrained()?'after drain':'by force'}`);
 			try{
 				this.sendEnd();
 			}catch(err){
@@ -279,15 +372,14 @@ class BaudotInterface extends Interface{
 			clearInterval(this.pulse);
 			clearTimeout(this.baudotTimeout);		
 	
-			this.internal.end();
-			this.external.end();
-	
-			this._internal.end();
-			this._external.end();
-	
+			this.destroy();
+			
+			this.printDebugString();
+			
 			this.emit("end");
 		}else{
-			if(logDebug) logger.log(inspect`not ending baudotinterface, because it is not drained yet.`);
+			this.debug(inspect`not ending baudotinterface, because it is not drained yet.`);
+
 			this.once('drain', this.end);
 		}
 	}

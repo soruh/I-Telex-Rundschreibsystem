@@ -16,7 +16,7 @@ if (!process.argv[2] || !process.argv[3])
 // tslint:disable-next-line:no-empty
 logging_1.logger = { log: () => { } };
 let socket = new net_1.Socket();
-let baudotInterface = new BaudotInterface_1.default();
+let baudotInterface = new BaudotInterface_1.default(logging_1.logger, ["\x1b[32m", "client", "\x1b[0m"]);
 class noAutoCr extends stream_1.Transform {
     _transform(chunk, encoding, callback) {
         callback(null, chunk.toString().replace(/\n/g, '\x1b[1B'));
@@ -28,6 +28,13 @@ class addCr extends stream_1.Transform {
         callback(null, chunk.toString().replace(/\n/g, '\r\n'));
     }
 }
+socket.once('close', () => {
+    process.stdout.write("\n<connection closed>\n");
+    process.exit();
+});
+socket.on('error', () => {
+    //
+});
 socket
     .pipe(baudotInterface.external)
     .pipe(socket);
@@ -38,7 +45,11 @@ process.stdin
     .pipe(process.stdout);
 socket.connect({ host: process.argv[2], port: parseInt(process.argv[3]) });
 baudotInterface.call('42');
-baudotInterface.on('end', () => {
+baudotInterface.on('request end', () => {
+    process.stdout.write("\n<connection end requested>\n");
     socket.end();
-    process.exit();
+});
+baudotInterface.on('end', () => {
+    process.stdout.write("\n<interface ended>\n");
+    socket.end();
 });

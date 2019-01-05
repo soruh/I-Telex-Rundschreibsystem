@@ -34,7 +34,7 @@ server.on('connection', socket=>{
 		if([0,1,2,3,4,6,7,8,9].indexOf(chunk[0]) === -1){
 			interFace = new AsciiInterface(false);
 		}else{
-			interFace = new BaudotInterface();
+			interFace = new BaudotInterface(logger, ["\x1b[35m", "caller", "\x1b[0m"]);
 		}
 
 		logger.log(inspect`${interFace instanceof BaudotInterface?'baudot':'ascii'} client calling`);
@@ -58,7 +58,7 @@ server.on('connection', socket=>{
 		
 
 		socket.on('close', ()=>{
-			interFace.end();
+			(interFace as BaudotInterface).end(true);
 			
 			logStreamIn.end();
 			logStreamOut.end();
@@ -110,6 +110,7 @@ server.on('connection', socket=>{
 					interFace.end();
 					
 					setTimeout(()=>{
+						logger.log('ending socket');
 						socket.end();
 					}, 1000);
 			}

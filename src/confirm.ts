@@ -4,12 +4,12 @@ import { logger, logStream,inspect } from "./util/logging";
 function confirm(socket:Duplex, timeout:NodeJS.Timer, index:number):Promise<string>{
 return new Promise((resolve, reject)=>{
 	logger.log(`confirming client ${index}`);
-	let loggingStream = new logStream(inspect`called client ${index}`, socket);
+	// let loggingStream = new logStream(inspect`called client ${index}`, socket);
 
 	socket.write('@');
 
 	function end(success:boolean){
-		loggingStream.end();
+		// loggingStream.end();
 		logger.log(`${success?'confirmed':'failed to confirm'} client ${index}`);
 
 		socket.removeAllListeners('close');

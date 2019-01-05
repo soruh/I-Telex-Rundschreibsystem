@@ -1,6 +1,6 @@
 
 const config:{
-	LOGBAUDOTINTERFACE: boolean,
+	LOGBAUDOTINTERFACE: number,
 	PORT: number,
 	TLN_SERVER_HOST: string,
 	TLN_SERVER_PORT: number,

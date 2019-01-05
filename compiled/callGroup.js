@@ -19,7 +19,7 @@ function explainErrorCode(code) {
             return code;
     }
 }
-function callOne(number, index) {
+function callOne(number, index, numbers) {
     return new Promise(async (resolve, reject) => {
         // output.write(`calling: ${number}\r\n`);
         let peer;
@@ -32,11 +32,12 @@ function callOne(number, index) {
         let interFace;
         if (peer) {
             // output.write(`number found: ${peer.name}\r\n`);
+            const padding = (numbers.length - 1).toString().length;
             switch (peer.type) {
                 case 1:
                 case 2:
                 case 5:
-                    interFace = new BaudotInterface_1.default();
+                    interFace = new BaudotInterface_1.default(logging_1.logger, ["\x1b[34m", `called ${index.toString().padStart(padding)}`, "\x1b[0m"]);
                     break;
                 case 3:
                 case 4:
@@ -48,6 +49,10 @@ function callOne(number, index) {
                     reject('invalid type');
                     return;
             }
+            // tslint:disable-next-line:max-line-length
+            const logStreamIn = new logging_1.logStream(logging_1.inspect `called client ${index.toString().padStart(padding)} \x1b[033m in\x1b[0m`, interFace.internal);
+            // tslint:disable-next-line:max-line-length
+            const logStreamOut = new logging_1.logStream(logging_1.inspect `called client ${index.toString().padStart(padding)} \x1b[034mout\x1b[0m`, interFace._internal);
             if (blacklist_1.isBlacklisted(number)) {
                 // output.write(`${peer.name}(${peer.number}) has been blacklisted\r\n\n`);
                 reject('blacklisted');
@@ -144,6 +149,8 @@ function callOne(number, index) {
             });
             socket.on('close', () => {
                 interFace.end();
+                logStreamIn.end();
+                logStreamOut.end();
                 logging_1.logger.log(logging_1.inspect `called client disconnected`);
             });
             socket.connect({
@@ -162,7 +169,7 @@ function callGroup(group, callback) {
     const status = new events_1.EventEmitter();
     Promise.all(group.map(async (number, index) => {
         try {
-            const result = await callOne(number, index);
+            const result = await callOne(number, index, group);
             status.emit('success', number, result);
             return result;
         }

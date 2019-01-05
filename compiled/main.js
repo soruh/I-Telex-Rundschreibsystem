@@ -25,7 +25,7 @@ server.on('connection', socket => {
             interFace = new AsciiInterface_1.default(false);
         }
         else {
-            interFace = new BaudotInterface_1.default();
+            interFace = new BaudotInterface_1.default(logging_1.logger, ["\x1b[35m", "caller", "\x1b[0m"]);
         }
         logging_1.logger.log(logging_1.inspect `${interFace instanceof BaudotInterface_1.default ? 'baudot' : 'ascii'} client calling`);
         interFace.on('end', () => {
@@ -40,7 +40,7 @@ server.on('connection', socket => {
         let logStreamIn = new logging_1.logStream(logging_1.inspect `calling client \x1b[033m in\x1b[0m`, interFace.internal);
         let logStreamOut = new logging_1.logStream(logging_1.inspect `calling client \x1b[034mout\x1b[0m`, interFace._internal);
         socket.on('close', () => {
-            interFace.end();
+            interFace.end(true);
             logStreamIn.end();
             logStreamOut.end();
             logging_1.logger.log(logging_1.inspect `calling client disconnected`);
@@ -80,6 +80,7 @@ server.on('connection', socket => {
                     rl.close();
                     interFace.end();
                     setTimeout(() => {
+                        logging_1.logger.log('ending socket');
                         socket.end();
                     }, 1000);
             }

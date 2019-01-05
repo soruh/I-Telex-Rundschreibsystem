@@ -25,11 +25,7 @@ class AsciiInterface extends Interface {
 	}
 
 	public end(){
-		this.internal.end();
-		this.external.end();
-
-		this._internal.end();
-		this._external.end();
+		this.destroy();
 
 		this.emit("end");
 	}

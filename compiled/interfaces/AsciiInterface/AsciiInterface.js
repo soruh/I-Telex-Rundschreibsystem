@@ -24,10 +24,7 @@ class AsciiInterface extends Interface_1.default {
         this._external.write(`*${extension}*`);
     }
     end() {
-        this.internal.end();
-        this.external.end();
-        this._internal.end();
-        this._external.end();
+        this.destroy();
         this.emit("end");
     }
 }
