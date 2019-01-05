@@ -110,7 +110,7 @@ async function updateBlacklistForNumber(number) {
             logging_1.logger.log(logging_1.inspect `called client timed out`);
         });
         function close() {
-            interFace.once('end', () => socket.destroy);
+            interFace.once('end', () => socket.destroy());
             interFace.end();
         }
         function confirmBlacklisting() {

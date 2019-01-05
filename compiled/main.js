@@ -76,11 +76,8 @@ server.on('connection', socket => {
                 case 'end':
                 default:
                     rl.close();
+                    interFace.once('end', () => socket.destroy());
                     interFace.end();
-                    setTimeout(() => {
-                        logging_1.logger.log('ending socket');
-                        socket.end();
-                    }, 1000);
             }
         }
         if (interFace instanceof BaudotInterface_1.default) {

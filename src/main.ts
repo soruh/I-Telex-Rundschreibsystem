@@ -107,12 +107,9 @@ server.on('connection', socket=>{
 				case 'end':
 				default:
 					rl.close();
-					interFace.end();
 					
-					setTimeout(()=>{
-						logger.log('ending socket');
-						socket.end();
-					}, 1000);
+					interFace.once('end', ()=>socket.destroy());
+					interFace.end();
 			}
 		}
 

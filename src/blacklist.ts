@@ -129,7 +129,7 @@ async function updateBlacklistForNumber(number:number){
 
 
 		function close(){
-			interFace.once('end', ()=>socket.destroy);
+			interFace.once('end', ()=>socket.destroy());
 			interFace.end();
 		}
 
