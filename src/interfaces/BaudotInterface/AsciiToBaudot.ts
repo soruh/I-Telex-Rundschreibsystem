@@ -1,5 +1,3 @@
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 
 import { Transform } from "stream";
 import { baudotModeUnknown, baudotify } from "../../util/baudot";

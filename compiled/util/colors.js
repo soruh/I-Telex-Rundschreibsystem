@@ -1,6 +1,4 @@
 "use strict";
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 Object.defineProperty(exports, "__esModule", { value: true });
 const COLORS = {
     Reset: "\x1b[000m",

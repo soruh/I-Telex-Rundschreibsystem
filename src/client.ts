@@ -22,8 +22,26 @@ let baudotInterface = new BaudotInterface(logger, ["\x1b[32m", "client", "\x1b[0
 
 
 class noAutoCr extends Transform{
+	private padding = 0;
 	public _transform(chunk:string, encoding:string, callback:(err?:Error, data?:string)=>void) {
-		callback(null, chunk.toString().replace(/\n/g, '\x1b[1B'));
+		let out="";
+		for(let char of chunk.toString()){
+			switch(char){
+				case '\r':
+					this.padding = 0;
+					out+='\r';
+					break;
+				case '\n':
+					out+='\n';
+					out+=' '.repeat(this.padding);
+					break;
+				default:
+					this.padding++;
+					out+=char;
+			}
+		}
+
+		callback(null, out);
 	}
 }
 

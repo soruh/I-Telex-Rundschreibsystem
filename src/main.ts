@@ -1,5 +1,3 @@
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 
 
 import * as readline from "readline";
@@ -12,6 +10,7 @@ import Interface from "./interfaces/Interface";
 import call from "./call";
 import { PORT } from "./config";
 import { baudotModeUnknown } from "./util/baudot";
+import { Writable } from "stream";
 
 declare global {
 	interface Buffer {
@@ -53,15 +52,15 @@ server.on('connection', socket=>{
 		// });
 	
 		
-		let logStreamIn = new logStream(inspect`calling client \x1b[033m in\x1b[0m`, interFace.internal);
-		let logStreamOut = new logStream(inspect`calling client \x1b[034mout\x1b[0m`, interFace._internal);
+		// let logStreamIn = new logStream(inspect`calling client \x1b[033m in\x1b[0m`, interFace.internal);
+		// let logStreamOut = new logStream(inspect`calling client \x1b[034mout\x1b[0m`, interFace._internal);
 		
 
 		socket.on('close', ()=>{
 			(interFace as BaudotInterface).end(true);
 			
-			logStreamIn.end();
-			logStreamOut.end();
+			// logStreamIn.end();
+			// logStreamOut.end();
 			logger.log(inspect`calling client disconnected`);
 		});
 
@@ -75,18 +74,19 @@ server.on('connection', socket=>{
 
 			if(interFace instanceof BaudotInterface){
 				if(!interFace.drained){
-					logger.log('waiting for drain');
+					// logger.log('waiting for drain');
 					await new Promise((resolve, reject) => {
 						interFace.on('drain', resolve);
 					});
-					logger.log('drained');
+					// logger.log('drained');
 
 					interFace.asciifier.setMode(baudotModeUnknown);
 					interFace.baudotifier.setMode(baudotModeUnknown);
 
-				}else{
-					logger.log('was already drained');
 				}
+				// else{
+				// 	logger.log('was already drained');
+				// }
 			}
 
 			const rl = readline.createInterface({
@@ -94,7 +94,7 @@ server.on('connection', socket=>{
 				output:interFace.internal,
 			});
 			
-			const result = await ui(rl);
+			const result = await ui(rl as readline.ReadLine&{output:Writable});
 
 			switch(result.nextAction){
 				case 'call':
@@ -119,7 +119,7 @@ server.on('connection', socket=>{
 		if(interFace instanceof BaudotInterface){
 			interFace.on('call', ext=>{ // for baudot interface
 				handleClient();
-				logger.log(inspect`baudot client calling extension: ${ext}`);
+				// logger.log(inspect`baudot client calling extension: ${ext}`);
 			});
 		}else{
 			handleClient();

@@ -1,7 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 const net_1 = require("net");
 const util = require("util");
 const ITelexServerCom_1 = require("./util/ITelexServerCom");
@@ -14,6 +12,7 @@ const events_1 = require("events");
 function explainErrorCode(code) {
     switch (code) {
         case 'EHOSTUNREACH':
+        case 'ECONNREFUSED':
             return 'derailed';
         default:
             return code;
@@ -49,10 +48,8 @@ function callOne(number, index, numbers) {
                     reject('invalid type');
                     return;
             }
-            // tslint:disable-next-line:max-line-length
-            const logStreamIn = new logging_1.logStream(logging_1.inspect `called client ${index.toString().padStart(padding)} \x1b[033m in\x1b[0m`, interFace.internal);
-            // tslint:disable-next-line:max-line-length
-            const logStreamOut = new logging_1.logStream(logging_1.inspect `called client ${index.toString().padStart(padding)} \x1b[034mout\x1b[0m`, interFace._internal);
+            // const logStreamIn  = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[033m in\x1b[0m`, interFace.internal);
+            // const logStreamOut = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[034mout\x1b[0m`, interFace._internal);
             if (blacklist_1.isBlacklisted(number)) {
                 // output.write(`${peer.name}(${peer.number}) has been blacklisted\r\n\n`);
                 reject('blacklisted');
@@ -85,14 +82,14 @@ function callOne(number, index, numbers) {
                         interFace.once('ack', (x) => {
                             logging_1.logger.log(`initial ack: ${x}`);
                             if (interFace.drained) {
-                                logging_1.logger.log('was already drained');
+                                // logger.log('was already drained');
                                 resolve();
                             }
                             else {
                                 logging_1.logger.log('waiting for drain');
                                 interFace.on('drain', () => {
                                     resolve();
-                                    logging_1.logger.log('drained');
+                                    // logger.log('drained');
                                 });
                             }
                         });
@@ -149,8 +146,8 @@ function callOne(number, index, numbers) {
             });
             socket.on('close', () => {
                 interFace.end();
-                logStreamIn.end();
-                logStreamOut.end();
+                // logStreamIn.end();
+                // logStreamOut.end();
                 logging_1.logger.log(logging_1.inspect `called client disconnected`);
             });
             socket.connect({

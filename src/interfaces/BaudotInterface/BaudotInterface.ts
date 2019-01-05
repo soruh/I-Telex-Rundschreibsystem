@@ -1,5 +1,3 @@
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 
 import { baudotModeBu, changeModeBu } from "../../util/baudot";
 import * as util from "util"; // TODO remove?
@@ -116,7 +114,7 @@ class BaudotInterface extends Interface{
 		this.asciifier.pipe(this._internal);
 		
 		this.chunker.on('data', (data:number[])=>{
-			this.debug(`BaudotInterface ${this.name} recieved data: ${util.inspect(data)}`, 3);
+			this.debug(`recieved data: ${util.inspect(data)}`, 3);
 
 			this.baudotDataListener(data);
 		});
@@ -144,21 +142,19 @@ class BaudotInterface extends Interface{
 	}
 
 	public printDebugString(){
-		function printTruthy(value:any, overwrite?:string){
-			let padding = 0;
-			switch(typeof value){
-				case 'boolean':
-					padding = 5;
-					break;
-				case 'number':
-					padding = 3;
-					break;
+		function getColor(value:any, colors: string[]){
+			let color:string;
+			if(colors[2]){
+				color = colors[2];
+			}else if(value){
+				color = colors[1];
+			}else{
+				color = colors[0];
 			}
 
-			return (overwrite||(value?'\x1b[32m':'\x1b[31m'))+value.toString().padStart(padding)+'\x1b[0m';
+			return color;
 		}
 
-		// tslint:disable-next-line:max-line-length
 		const values = {
 			sent: this.bytesSent,
 			acknowleged: this.bytesAcknowleged,
@@ -170,22 +166,49 @@ class BaudotInterface extends Interface{
 			drained: this.drained,
 			ended: this.ended,
 		};
+
+		const colors = {
+			drained: ['\x1b[31m', '\x1b[32m'],
+			initialized: ['\x1b[31m', '\x1b[32m'],
+			sendable: ['\x1b[31m', '\x1b[32m'],
+			acknowleged: ['\x1b[32m', '\x1b[32m'],
+			sent: ['\x1b[32m', '\x1b[32m'],
+		};
+
 		let pairs = [];
 
-		let overwrite = null;
-		if(this.bytesSent !== this.bytesAcknowleged) overwrite = "\x1b[36m";
+		let overwrite = this.bytesSent !== this.bytesAcknowleged;
 
 		for(let key in values){
 			let value = values[key];
 
-			let needOverwrite = false;
-			if(key === "sent"||key === "acknowleged") needOverwrite = true;
+			let overwriteable = false;
+			if(~["sent", "acknowleged"].indexOf(key)) overwriteable = true;
 
-			pairs.push([key, printTruthy(value, needOverwrite?overwrite:null)]); 
+			let currentColors = colors[key]||['\x1b[32m', '\x1b[31m'];
+			if(overwriteable&&overwrite) currentColors[2] = "\x1b[31m";
+
+
+			let padding = 0;
+			if(key === 'buffered'){
+				padding = 5;
+			}else{
+				switch(typeof value){
+					case 'boolean':
+						padding = 5;
+						break;
+					case 'number':
+						padding = 3;
+						break;
+				}
+			}
+
+			value = getColor(value, currentColors)+value.toString().padStart(padding)+'\x1b[0m';
+
+			pairs.push([key, value]); 
 		}
 
-		// tslint:disable-next-line:max-line-length
-		this.debug(pairs.map(([key, value])=>`${key}: ${value}`).join(' | '), 1);
+		this.debug(pairs.map(([key, value])=>`${key}: ${value}`).join(' │ '), 1);
 	}
 
 	get drained(){
@@ -297,8 +320,9 @@ class BaudotInterface extends Interface{
 				break;
 			case 1: 
 				this.debug(inspect`Direct dial ${data[0]}`);
-				// this.accepted();
 				this.emit("call", data[0]);
+
+				this.initialized = true;
 				break;
 			case 2: 
 				this.debug(inspect`Baudot data ${data.length} bytes`);
@@ -375,7 +399,7 @@ class BaudotInterface extends Interface{
 			this.destroy();
 			
 			this.printDebugString();
-			
+
 			this.emit("end");
 		}else{
 			this.debug(inspect`not ending baudotinterface, because it is not drained yet.`);

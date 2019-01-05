@@ -15,6 +15,8 @@ return new Promise((resolve, reject)=>{
 		socket.removeAllListeners('close');
 		socket.removeAllListeners('data');
 
+		socket.write('\r\n\n');
+
 		clearInterval(timeoutCheckInterval);
 		clearTimeout(timeout);
 		clearTimeout(resolveTimeout);

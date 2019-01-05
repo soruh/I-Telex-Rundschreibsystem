@@ -1,6 +1,4 @@
 "use strict";
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 Object.defineProperty(exports, "__esModule", { value: true });
 const readline = require("readline");
 const net = require("net");
@@ -37,12 +35,12 @@ server.on('connection', socket => {
         });
         // interFace.on('timeout', (ext:number)=>{
         // });
-        let logStreamIn = new logging_1.logStream(logging_1.inspect `calling client \x1b[033m in\x1b[0m`, interFace.internal);
-        let logStreamOut = new logging_1.logStream(logging_1.inspect `calling client \x1b[034mout\x1b[0m`, interFace._internal);
+        // let logStreamIn = new logStream(inspect`calling client \x1b[033m in\x1b[0m`, interFace.internal);
+        // let logStreamOut = new logStream(inspect`calling client \x1b[034mout\x1b[0m`, interFace._internal);
         socket.on('close', () => {
             interFace.end(true);
-            logStreamIn.end();
-            logStreamOut.end();
+            // logStreamIn.end();
+            // logStreamOut.end();
             logging_1.logger.log(logging_1.inspect `calling client disconnected`);
         });
         async function handleClient() {
@@ -51,17 +49,17 @@ server.on('connection', socket => {
             interFace.internal.resume();
             if (interFace instanceof BaudotInterface_1.default) {
                 if (!interFace.drained) {
-                    logging_1.logger.log('waiting for drain');
+                    // logger.log('waiting for drain');
                     await new Promise((resolve, reject) => {
                         interFace.on('drain', resolve);
                     });
-                    logging_1.logger.log('drained');
+                    // logger.log('drained');
                     interFace.asciifier.setMode(baudot_1.baudotModeUnknown);
                     interFace.baudotifier.setMode(baudot_1.baudotModeUnknown);
                 }
-                else {
-                    logging_1.logger.log('was already drained');
-                }
+                // else{
+                // 	logger.log('was already drained');
+                // }
             }
             const rl = readline.createInterface({
                 input: interFace.internal,
@@ -88,7 +86,7 @@ server.on('connection', socket => {
         if (interFace instanceof BaudotInterface_1.default) {
             interFace.on('call', ext => {
                 handleClient();
-                logging_1.logger.log(logging_1.inspect `baudot client calling extension: ${ext}`);
+                // logger.log(inspect`baudot client calling extension: ${ext}`);
             });
         }
         else {

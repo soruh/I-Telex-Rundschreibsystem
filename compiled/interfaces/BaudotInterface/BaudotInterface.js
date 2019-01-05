@@ -1,6 +1,4 @@
 "use strict";
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 Object.defineProperty(exports, "__esModule", { value: true });
 const baudot_1 = require("../../util/baudot");
 const util = require("util"); // TODO remove?
@@ -94,7 +92,7 @@ class BaudotInterface extends Interface_1.default {
         this._external.pipe(this.chunker);
         this.asciifier.pipe(this._internal);
         this.chunker.on('data', (data) => {
-            this.debug(`BaudotInterface ${this.name} recieved data: ${util.inspect(data)}`, 3);
+            this.debug(`recieved data: ${util.inspect(data)}`, 3);
             this.baudotDataListener(data);
         });
         this._internal.on("data", data => this.write(data.toString()));
@@ -121,19 +119,19 @@ class BaudotInterface extends Interface_1.default {
         }
     }
     printDebugString() {
-        function printTruthy(value, overwrite) {
-            let padding = 0;
-            switch (typeof value) {
-                case 'boolean':
-                    padding = 5;
-                    break;
-                case 'number':
-                    padding = 3;
-                    break;
+        function getColor(value, colors) {
+            let color;
+            if (colors[2]) {
+                color = colors[2];
             }
-            return (overwrite || (value ? '\x1b[32m' : '\x1b[31m')) + value.toString().padStart(padding) + '\x1b[0m';
+            else if (value) {
+                color = colors[1];
+            }
+            else {
+                color = colors[0];
+            }
+            return color;
         }
-        // tslint:disable-next-line:max-line-length
         const values = {
             sent: this.bytesSent,
             acknowleged: this.bytesAcknowleged,
@@ -144,19 +142,41 @@ class BaudotInterface extends Interface_1.default {
             drained: this.drained,
             ended: this.ended,
         };
+        const colors = {
+            drained: ['\x1b[31m', '\x1b[32m'],
+            initialized: ['\x1b[31m', '\x1b[32m'],
+            sendable: ['\x1b[31m', '\x1b[32m'],
+            acknowleged: ['\x1b[32m', '\x1b[32m'],
+            sent: ['\x1b[32m', '\x1b[32m'],
+        };
         let pairs = [];
-        let overwrite = null;
-        if (this.bytesSent !== this.bytesAcknowleged)
-            overwrite = "\x1b[36m";
+        let overwrite = this.bytesSent !== this.bytesAcknowleged;
         for (let key in values) {
             let value = values[key];
-            let needOverwrite = false;
-            if (key === "sent" || key === "acknowleged")
-                needOverwrite = true;
-            pairs.push([key, printTruthy(value, needOverwrite ? overwrite : null)]);
+            let overwriteable = false;
+            if (~["sent", "acknowleged"].indexOf(key))
+                overwriteable = true;
+            let currentColors = colors[key] || ['\x1b[32m', '\x1b[31m'];
+            if (overwriteable && overwrite)
+                currentColors[2] = "\x1b[31m";
+            let padding = 0;
+            if (key === 'buffered') {
+                padding = 5;
+            }
+            else {
+                switch (typeof value) {
+                    case 'boolean':
+                        padding = 5;
+                        break;
+                    case 'number':
+                        padding = 3;
+                        break;
+                }
+            }
+            value = getColor(value, currentColors) + value.toString().padStart(padding) + '\x1b[0m';
+            pairs.push([key, value]);
         }
-        // tslint:disable-next-line:max-line-length
-        this.debug(pairs.map(([key, value]) => `${key}: ${value}`).join(' | '), 1);
+        this.debug(pairs.map(([key, value]) => `${key}: ${value}`).join(' │ '), 1);
     }
     get drained() {
         return this.isDrained();
@@ -262,8 +282,8 @@ class BaudotInterface extends Interface_1.default {
                 break;
             case 1:
                 this.debug(logging_1.inspect `Direct dial ${data[0]}`);
-                // this.accepted();
                 this.emit("call", data[0]);
+                this.initialized = true;
                 break;
             case 2:
                 this.debug(logging_1.inspect `Baudot data ${data.length} bytes`);

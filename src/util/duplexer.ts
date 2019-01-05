@@ -1,6 +1,4 @@
 "use strict";
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 
 
 import { Stream, Writable, Readable, Duplex } from "stream";

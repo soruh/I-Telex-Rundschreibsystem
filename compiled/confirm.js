@@ -11,6 +11,7 @@ function confirm(socket, timeout, index) {
             logging_1.logger.log(`${success ? 'confirmed' : 'failed to confirm'} client ${index}`);
             socket.removeAllListeners('close');
             socket.removeAllListeners('data');
+            socket.write('\r\n\n');
             clearInterval(timeoutCheckInterval);
             clearTimeout(timeout);
             clearTimeout(resolveTimeout);

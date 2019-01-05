@@ -1,6 +1,4 @@
 "use strict";
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 Object.defineProperty(exports, "__esModule", { value: true });
 const colors_1 = require("./colors");
 const util = require("util");

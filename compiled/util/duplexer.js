@@ -1,7 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 const stream_1 = require("stream");
 const writeMethods = ["write", "end", "destroy"];
 const readMethods = ["resume", "pause", "pipe", "unpipe"];

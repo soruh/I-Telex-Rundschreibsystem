@@ -1,6 +1,4 @@
 "use strict";
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 Object.defineProperty(exports, "__esModule", { value: true });
 const Interface_1 = require("../Interface");
 const ExtractAsciiExtension_1 = require("./ExtractAsciiExtension");

@@ -2,6 +2,7 @@ import { ReadLine } from "readline";
 import { isBlacklisted, updateBlacklistForNumber } from "./blacklist";
 import { Peer_search } from "./util/ITelexServerCom";
 import { logger } from "./util/logging";
+import { Writable } from "stream";
 
 interface commandResult{
 	end?:boolean;
@@ -244,7 +245,7 @@ async function handleCommand(input:string, mode:string, callList:number[]):Promi
 	}
 }
 
-function ui(readline:ReadLine):Promise<{
+function ui(readline:ReadLine&{output: Writable}):Promise<{
 	nextAction: string,
 	callList: number[],
 }>{

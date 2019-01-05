@@ -18,8 +18,28 @@ logging_1.logger = { log: () => { } };
 let socket = new net_1.Socket();
 let baudotInterface = new BaudotInterface_1.default(logging_1.logger, ["\x1b[32m", "client", "\x1b[0m"]);
 class noAutoCr extends stream_1.Transform {
+    constructor() {
+        super(...arguments);
+        this.padding = 0;
+    }
     _transform(chunk, encoding, callback) {
-        callback(null, chunk.toString().replace(/\n/g, '\x1b[1B'));
+        let out = "";
+        for (let char of chunk.toString()) {
+            switch (char) {
+                case '\r':
+                    this.padding = 0;
+                    out += '\r';
+                    break;
+                case '\n':
+                    out += '\n';
+                    out += ' '.repeat(this.padding);
+                    break;
+                default:
+                    this.padding++;
+                    out += char;
+            }
+        }
+        callback(null, out);
     }
 }
 // tslint:disable-next-line:max-classes-per-file

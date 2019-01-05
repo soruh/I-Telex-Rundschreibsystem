@@ -1,6 +1,4 @@
 
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
 
 
 
@@ -10,9 +8,7 @@ const unknownBaudotChar = "#";
 const invalidAsciiChar = 4;
 
 
-// tslint:disable-next-line:max-line-length
 const baudotBu = ["#","t","\r","o"," ","h","n","m","\n","l","r","g","i","p","c","v","e","z","d","b","s","y","f","x","a","w","j","\x0F","u","q","k","\x0E"];
-// tslint:disable-next-line:max-line-length
 const baudotZi = ["#","5","\r","9"," ","#",",",".","\n",")","4","#","8","0",":","=","3","+","@","?","'","6","#","/","-","2","%","\x0F","7","1","(","\x0E"];
 
 const changeModeBu = 31;

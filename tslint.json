@@ -6,7 +6,7 @@
     "jsRules": {},
     "rules": {
         "curly":false,
-
+        "max-line-length": false,
         "no-shadowed-variable":false,
         "no-var-keyword":false,
         "prefer-const": false,

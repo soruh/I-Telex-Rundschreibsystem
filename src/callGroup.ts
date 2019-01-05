@@ -1,7 +1,4 @@
 "use strict";
-// @ts-ignore
-// tslint:disable-next-line:max-line-length no-console triple-equals
-
 
 import { Socket } from "net";
 import * as util from "util";
@@ -26,6 +23,7 @@ interface Connection {
 function explainErrorCode(code:string){ // TODO: add more codes
 	switch(code){
 		case 'EHOSTUNREACH':
+		case 'ECONNREFUSED':
 			return 'derailed';
 		default:
 			return code;
@@ -64,10 +62,8 @@ function callOne(number:number, index:number, numbers:number[]){
 					return;
 			}
 
-			// tslint:disable-next-line:max-line-length
-			const logStreamIn  = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[033m in\x1b[0m`, interFace.internal);
-			// tslint:disable-next-line:max-line-length
-			const logStreamOut = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[034mout\x1b[0m`, interFace._internal);
+						// const logStreamIn  = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[033m in\x1b[0m`, interFace.internal);
+						// const logStreamOut = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[034mout\x1b[0m`, interFace._internal);
 
 
 			if(isBlacklisted(number)){
@@ -114,13 +110,13 @@ function callOne(number:number, index:number, numbers:number[]){
 						interFace.once('ack', (x)=>{
 							logger.log(`initial ack: ${x}`);
 							if((interFace as BaudotInterface).drained){
-								logger.log('was already drained');
+								// logger.log('was already drained');
 								resolve();
 							}else{
 								logger.log('waiting for drain');
 								interFace.on('drain', ()=>{
 									resolve();
-									logger.log('drained');
+									// logger.log('drained');
 								});
 							}
 						});
@@ -190,8 +186,8 @@ function callOne(number:number, index:number, numbers:number[]){
 			socket.on('close', ()=>{
 				interFace.end();
 				
-				logStreamIn.end();
-				logStreamOut.end();
+				// logStreamIn.end();
+				// logStreamOut.end();
 
 				logger.log(inspect`called client disconnected`);
 			});

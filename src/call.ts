@@ -4,6 +4,45 @@ import CallEndDetector from "./CallEndDetector";
 import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import confirm from "./confirm";
 import Client from "./Client";
+import { createWriteStream, openSync, mkdirSync } from "fs";
+
+import { join, dirname } from "path";
+import { createGzip, Gzip } from "zlib";
+
+function createLogStream(failed=false){
+	try{	
+		var logFileName = new Date().toISOString()+'.gz';
+		var path = join(__dirname, '..', 'logs', logFileName);
+	
+		const fd = openSync(path, 'w');
+		const writeStream = createWriteStream(null, {fd});
+
+		logger.log(inspect`opened log file ${logFileName}`);
+
+		writeStream.on('close', ()=>{
+			logger.log(inspect`closed log file ${logFileName}`);	
+		});
+	
+		var logFile = createGzip();
+		logFile.pipe(writeStream);
+
+		return logFile;
+	}catch(err){
+		logger.log(inspect`failed to create log file ${logFileName}`);
+		if(err.code === 'ENOENT'){
+			if(!failed){
+				mkdirSync(dirname(path), {recursive:true});
+				logger.log(inspect`created directory ${dirname(path)}`);
+
+				return createLogStream(true);
+			}else{
+				throw err;
+			}
+		}else{
+			throw err;
+		}
+	}
+}
 
 function call(caller:Client, numbers:number[]){
 	caller.interface.internal.write('\r\n');
@@ -31,9 +70,13 @@ function call(caller:Client, numbers:number[]){
 			}
 		}
 
+		const logFile = createLogStream();
+		logFile.write(JSON.stringify(connections.map(x=>[x.number, x.identifier]))+'\n');
+
+		caller.interface.internal.pipe(logFile);
+
 		caller.interface.once('end', handleAbort);
 
-		// tslint:disable-next-line:max-line-length
 		caller.interface.internal.write(`Now connected to ${connections.length} peer${connections.length===1?'':'s'}. Type '+++' to end message\r\n`);
 		
 		for(let connection of connections){
@@ -51,11 +94,12 @@ function call(caller:Client, numbers:number[]){
 				caller.interface.internal.pipe(connection.interface.internal);
 			}
 
-			// tslint:disable-next-line:max-line-length
 			caller.interface.internal.write(`\r\n\ntransmission over. confirming ${connections.length} peer${connections.length===1?'':'s'}.\r\n`);
 
 			logger.log("message ended");
 			// logger.log(connections);
+
+			logFile.end();
 
 			let promises = [];
 			for(let index in connections){
@@ -101,7 +145,8 @@ function call(caller:Client, numbers:number[]){
 
 							confirm(connection.interface.internal, timeout, +index)
 							.then(result=>{
-								caller.interface.internal.write(`${connection.number}: ${result.replace(/[\r\n]/g, '')}\r\n`);
+								let changed = connection.identifier !== result;
+								caller.interface.internal.write(`${connection.number}: (${changed?'x':'='}) ${result.replace(/[\r\n]/g, '')}\r\n`);
 								close();
 							})
 							.catch(err=>{
