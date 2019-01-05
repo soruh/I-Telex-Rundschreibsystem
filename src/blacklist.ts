@@ -45,6 +45,7 @@ function changeBlacklist(callback:(blacklist:number[])=>number[]){
 
 	writeFile(blackListPath, JSON.stringify(callback(getBlacklist())), ()=>{
 		blackListLocked=false;
+		logger.log(inspect`wrote new blacklist`);
 	});
 }
 
@@ -127,6 +128,11 @@ async function updateBlacklistForNumber(number:number){
 		});
 
 
+		function close(){
+			interFace.once('end', ()=>socket.destroy);
+			interFace.end();
+		}
+
 		function confirmBlacklisting(){
 			rl.question(`do you (${number}) want to be blacklisted?\r\n (j/y/n) `, answer=>{
 				switch(answer.toLowerCase()){
@@ -134,10 +140,14 @@ async function updateBlacklistForNumber(number:number){
 					case 'j':
 						addToBlacklist(number);
 						interFace.internal.write("You are now blacklisted.\r\n");
+						clearTimeout(timeout);
+						close();
 						break;
 					case 'n':
 						removeFromBlacklist(number);
 						interFace.internal.write("You are now not blacklisted.\r\n");
+						clearTimeout(timeout);
+						close();
 						break;
 					default:
 						interFace.internal.write("Invalid input.\r\n");
@@ -158,14 +168,14 @@ async function updateBlacklistForNumber(number:number){
 			confirmBlacklisting();
 		});
 
-		setTimeout(()=>{ // close connection after 5 minutes
+		let timeout = setTimeout(()=>{ // close connection after 5 minutes
 
 			interFace.once('end', ()=>socket.destroy());
 			
 			interFace.end(); // end the interface
 
 		}, 5*60*1000);
-	}, 60*1000);
+	}, 30*1000);
 }
 
 function isBlacklisted(number:number):boolean{

@@ -39,6 +39,7 @@ function changeBlacklist(callback) {
     blackListLocked = true;
     fs_1.writeFile(blackListPath, JSON.stringify(callback(getBlacklist())), () => {
         blackListLocked = false;
+        logging_1.logger.log(logging_1.inspect `wrote new blacklist`);
     });
 }
 function addToBlacklist(number) {
@@ -108,6 +109,10 @@ async function updateBlacklistForNumber(number) {
             socket.end();
             logging_1.logger.log(logging_1.inspect `called client timed out`);
         });
+        function close() {
+            interFace.once('end', () => socket.destroy);
+            interFace.end();
+        }
         function confirmBlacklisting() {
             rl.question(`do you (${number}) want to be blacklisted?\r\n (j/y/n) `, answer => {
                 switch (answer.toLowerCase()) {
@@ -115,10 +120,14 @@ async function updateBlacklistForNumber(number) {
                     case 'j':
                         addToBlacklist(number);
                         interFace.internal.write("You are now blacklisted.\r\n");
+                        clearTimeout(timeout);
+                        close();
                         break;
                     case 'n':
                         removeFromBlacklist(number);
                         interFace.internal.write("You are now not blacklisted.\r\n");
+                        clearTimeout(timeout);
+                        close();
                         break;
                     default:
                         interFace.internal.write("Invalid input.\r\n");
@@ -133,11 +142,11 @@ async function updateBlacklistForNumber(number) {
             interFace.internal.write("Rundschreibsystem:\r\n");
             confirmBlacklisting();
         });
-        setTimeout(() => {
+        let timeout = setTimeout(() => {
             interFace.once('end', () => socket.destroy());
             interFace.end(); // end the interface
         }, 5 * 60 * 1000);
-    }, 60 * 1000);
+    }, 30 * 1000);
 }
 exports.updateBlacklistForNumber = updateBlacklistForNumber;
 function isBlacklisted(number) {

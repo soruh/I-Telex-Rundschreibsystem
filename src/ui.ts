@@ -145,7 +145,7 @@ const commands_blacklist:CommandList = {
 			return {
 				end: true,
 				nextAction:'end',
-				response: `${number} will be called in 1min to change their blacklist status`,
+				response: `${number} will be called in 30sec to change their blacklist status`,
 			};
 		},
 	},
