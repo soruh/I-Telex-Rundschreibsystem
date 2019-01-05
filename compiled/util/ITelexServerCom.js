@@ -3,14 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const APICall_1 = require("./APICall");
 const config_1 = require("../config");
 async function peerQuery(number) {
-    if (number === 1)
+    if (config_1.LOCAL_NUMBER && number === config_1.LOCAL_NUMBER)
         return {
             extension: '0',
             hostname: 'localhost',
             port: '4242',
             disabled: 0,
             ipaddress: null,
-            name: 'LOKAL',
+            name: 'LOCAL',
             number: 1,
             pin: '0',
             timestamp: 0,

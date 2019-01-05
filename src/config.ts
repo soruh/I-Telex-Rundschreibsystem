@@ -4,6 +4,7 @@ const config:{
 	PORT: number,
 	TLN_SERVER_HOST: string,
 	TLN_SERVER_PORT: number,
+	LOCAL_NUMBER: number,
 // tslint:disable-next-line:no-var-requires
 } = require('../config.json');
 

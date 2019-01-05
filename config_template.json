@@ -1,4 +1,5 @@
 {
+	"LOCAL_NUMBER": null,
 	"LOGBAUDOTINTERFACE": false,
 	"PORT": 4000,
 	"TLN_SERVER_HOST": "telexgateway.de",
