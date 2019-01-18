@@ -7,7 +7,7 @@ const confirm_1 = require("./confirm");
 const fs_1 = require("fs");
 const path_1 = require("path");
 const zlib_1 = require("zlib");
-const IDENTIFIER = "1150 rundsen d";
+const IDENTIFIER = "11150 rundsen d";
 function createLogStream(failed = false) {
     try {
         var logFileName = new Date().toISOString() + '.gz';

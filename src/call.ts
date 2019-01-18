@@ -10,7 +10,7 @@ import Interface from "./interfaces/Interface";
 import { Socket } from "net";
 
 
-const IDENTIFIER = "1150 rundsen d";
+const IDENTIFIER = "11150 rundsen d";
 
 function createLogStream(failed=false){
 	try{	
