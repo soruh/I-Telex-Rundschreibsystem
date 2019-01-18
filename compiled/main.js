@@ -18,6 +18,10 @@ Buffer.prototype.readNullTermString =
 const server = new net.Server();
 server.on('connection', socket => {
     let interFace;
+    socket.on('error', err => {
+        logging_1.logger.log('error', err);
+        socket.end();
+    });
     socket.once('data', chunk => {
         if ([0, 1, 2, 3, 4, 6, 7, 8, 9].indexOf(chunk[0]) === -1) {
             interFace = new AsciiInterface_1.default(false);
@@ -27,10 +31,6 @@ server.on('connection', socket => {
         }
         logging_1.logger.log(logging_1.inspect `${interFace instanceof BaudotInterface_1.default ? 'baudot' : 'ascii'} client calling`);
         interFace.on('end', () => {
-            socket.end();
-        });
-        socket.on('error', err => {
-            logging_1.logger.log('error', err);
             socket.end();
         });
         // interFace.on('timeout', (ext:number)=>{
