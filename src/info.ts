@@ -11,7 +11,7 @@ durch nutzung dieses systems aktzeptiert
 der benutzer folgendes:
 
 
-der programmierer und betreiber dieses systems uebernehmen
+der programmierer, sowie der betreiber dieses systems uebernehmen
 keinerlei verantworung für moeglichen missbrauch dieses
 systems oder schaeden jeglicher art, die durch dessen
 benutzung zu stande kommen.
