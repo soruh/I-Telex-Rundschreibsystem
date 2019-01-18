@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const blacklist_1 = require("./blacklist");
 const ITelexServerCom_1 = require("./util/ITelexServerCom");
 const logging_1 = require("./util/logging");
+const info_1 = require("./info");
 const commands_main = {
     'h': {
         // help: "prints this help",
@@ -86,6 +87,16 @@ const commands_main = {
             return {
                 end: false,
                 response,
+            };
+        },
+    },
+    'i': {
+        help: "general information",
+        needsNumber: null,
+        action: () => {
+            return {
+                end: false,
+                response: info_1.default,
             };
         },
     },

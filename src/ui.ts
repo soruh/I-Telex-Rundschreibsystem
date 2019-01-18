@@ -3,6 +3,8 @@ import { isBlacklisted, updateBlacklistForNumber } from "./blacklist";
 import { Peer_search } from "./util/ITelexServerCom";
 import { logger } from "./util/logging";
 import { Writable } from "stream";
+import info from "./info";
+
 
 interface commandResult{
 	end?:boolean;
@@ -107,6 +109,16 @@ const commands_main:CommandList = {
 			return {
 				end: false,
 				response,
+			};
+		},
+	},
+	'i': {
+		help: "general information",
+		needsNumber: null,
+		action: ()=>{
+			return {
+				end: false,
+				response: info,
 			};
 		},
 	},
