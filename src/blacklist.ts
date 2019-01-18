@@ -129,7 +129,7 @@ async function updateBlacklistForNumber(number:number){
 
 
 		function close(){
-			interFace.once('end', ()=>socket.destroy());
+			interFace.once('end', ()=>socket.end());
 			interFace.end();
 		}
 
@@ -170,7 +170,7 @@ async function updateBlacklistForNumber(number:number){
 
 		let timeout = setTimeout(()=>{ // close connection after 5 minutes
 
-			interFace.once('end', ()=>socket.destroy());
+			interFace.once('end', ()=>socket.end());
 			
 			interFace.end(); // end the interface
 

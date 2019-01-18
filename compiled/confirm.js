@@ -1,17 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const logging_1 = require("./util/logging");
-function confirm(socket, timeout, index) {
+function confirm(socket, index) {
     return new Promise((resolve, reject) => {
-        logging_1.logger.log(`confirming client ${index}`);
+        let timeout = setTimeout(() => {
+            end(false, "timeout");
+        }, 10000);
+        logging_1.logger.log(logging_1.inspect `confirming client ${index == null ? 'caller' : 'client ' + index}`);
         // let loggingStream = new logStream(inspect`called client ${index}`, socket);
         socket.write('@');
-        function end(success) {
+        function end(success, message) {
             // loggingStream.end();
-            logging_1.logger.log(`${success ? 'confirmed' : 'failed to confirm'} client ${index}`);
+            logging_1.logger.log(logging_1.inspect `${success ? 'confirmed' : 'failed to confirm'} ${index == null ? 'caller' : 'client ' + index}`);
             socket.removeAllListeners('close');
             socket.removeAllListeners('data');
-            socket.write('\r\n\n');
+            try {
+                socket.write('\r\n\n');
+            }
+            catch (err) { /**/ }
             clearInterval(timeoutCheckInterval);
             clearTimeout(timeout);
             clearTimeout(resolveTimeout);
@@ -19,40 +25,47 @@ function confirm(socket, timeout, index) {
                 resolve(buffer);
             }
             else {
-                reject();
+                reject(message);
             }
         }
         let buffer = '';
         let lastPackage = 0;
         socket.on('data', chunk => {
+            // logger.log("recieved data");
             buffer += chunk.toString();
             lastPackage = Date.now();
         });
         let resolveTimeout;
         // always resolve after 7,5 secs
         socket.once('data', () => {
+            // logger.log("recieved initial data");
             clearTimeout(timeout);
             resolveTimeout = setTimeout(() => {
                 end(true);
             }, 7500);
         });
         socket.once('close', () => {
-            logging_1.logger.log('closed');
-            end(false);
+            // logger.log("socket closed");
+            end(false, 'closed');
         });
         let timeoutCheckInterval = setInterval(() => {
+            // logger.log("checking timeout");
+            // logger.log("last package: "+lastPackage+" ("+(Date.now()-lastPackage)+"ms ago)");
             // resolve if client didn't send data for 1 sec
             if (!resolveTimeout) {
+                // logger.log("!resolveTimeout");
                 return;
             }
             if (resolveTimeout._destroyed) {
+                // logger.log("resolveTimeout is destroyed");
                 clearInterval(timeoutCheckInterval);
                 return;
             }
             if (lastPackage !== 0 && Date.now() - lastPackage > 1000) {
+                // logger.log("more than 1000 ago");
                 end(true);
             }
-        }, 100);
+        }, 500);
     });
 }
 exports.default = confirm;

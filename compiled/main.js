@@ -68,7 +68,7 @@ server.on('connection', socket => {
             const result = await ui_1.default(rl);
             switch (result.nextAction) {
                 case 'call':
-                    call_1.default({
+                    await call_1.default({
                         interface: interFace,
                         socket,
                     }, result.callList);
@@ -76,9 +76,10 @@ server.on('connection', socket => {
                 case 'end':
                 default:
                     rl.close();
-                    interFace.once('end', () => socket.destroy());
+                    interFace.once('end', () => socket.end());
                     interFace.end();
             }
+            logging_1.logger.log(logging_1.inspect `ui actions finished`);
         }
         if (interFace instanceof BaudotInterface_1.default) {
             interFace.on('call', ext => {

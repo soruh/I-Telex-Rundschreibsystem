@@ -98,7 +98,7 @@ server.on('connection', socket=>{
 
 			switch(result.nextAction){
 				case 'call':
-					call({
+					await call({
 						interface:interFace,
 						socket,
 					}, result.callList);
@@ -108,9 +108,11 @@ server.on('connection', socket=>{
 				default:
 					rl.close();
 					
-					interFace.once('end', ()=>socket.destroy());
+					interFace.once('end', ()=>socket.end());
 					interFace.end();
 			}
+
+			logger.log(inspect`ui actions finished`);
 		}
 
 		if(interFace instanceof BaudotInterface){

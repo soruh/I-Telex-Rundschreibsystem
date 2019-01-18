@@ -65,12 +65,6 @@ function callOne(number, index, numbers) {
             let socket = new net_1.Socket();
             socket.pipe(interFace.external);
             interFace.external.pipe(socket);
-            let timeout = setTimeout(() => {
-                // output.write("timeout\r\n");
-                interFace.end();
-                // output.write(`${DELIMITER}\r\n`);
-                reject('timeout');
-            }, 10000);
             socket.on('connect', async () => {
                 if (!(interFace instanceof AsciiInterface_1.default && peer.extension === null)) {
                     logging_1.logger.log('calling: ' + peer.extension);
@@ -96,7 +90,7 @@ function callOne(number, index, numbers) {
                     });
                 }
                 try {
-                    const result = await confirm_1.default(interFace.internal, timeout, +index);
+                    const result = await confirm_1.default(interFace.internal, +index);
                     // output.write(result+'\r\n');
                     // interFace.internal.unpipe(output);
                     // if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
@@ -111,11 +105,14 @@ function callOne(number, index, numbers) {
                     resolve(connection);
                 }
                 catch (err) {
-                    logging_1.logger.log(logging_1.inspect `error: ${err}`);
+                    logging_1.logger.log(logging_1.inspect `confimation failed: ${err}`);
+                    if (err.message === 'timeout') {
+                        interFace.end();
+                        reject('timeout');
+                    }
                 }
             });
             interFace.on('reject', reason => {
-                clearTimeout(timeout);
                 interFace.end();
                 logging_1.logger.log(util.inspect(reason));
                 // output.write(`${reason}`); // \r\n is included in reject message
@@ -125,7 +122,6 @@ function callOne(number, index, numbers) {
             socket.once('error', (err) => {
                 switch (err.code) {
                     case "EHOSTUNREACH":
-                        clearTimeout(timeout);
                         interFace.end();
                         // output.write("derailed\r\n");
                         // output.write(`${DELIMITER}\r\n`);
@@ -174,8 +170,14 @@ function callGroup(group, callback) {
             status.emit('fail', number, err);
         }
     }))
-        .then(clients => callback(null, clients.filter(x => x)))
-        .catch(err => callback(err, null));
+        .then(clients => {
+        status.emit('end');
+        callback(null, clients.filter(x => x));
+    })
+        .catch(err => {
+        status.emit('end');
+        callback(err, null);
+    });
     return status;
 }
 exports.default = callGroup;

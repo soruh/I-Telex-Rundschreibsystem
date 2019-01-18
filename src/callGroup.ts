@@ -87,15 +87,6 @@ function callOne(number:number, index:number, numbers:number[]){
 			socket.pipe(interFace.external);
 			interFace.external.pipe(socket);
 
-
-			let timeout = setTimeout(()=>{
-				// output.write("timeout\r\n");
-				interFace.end();
-
-				// output.write(`${DELIMITER}\r\n`);
-				reject('timeout');
-			}, 10000);
-
 			socket.on('connect', async ()=>{
 
 				if(!(interFace instanceof AsciiInterface&&peer.extension === null)){
@@ -124,7 +115,8 @@ function callOne(number:number, index:number, numbers:number[]){
 				}
 
 				try{
-					const result = await confirm(interFace.internal, timeout, +index);
+					const result = await confirm(interFace.internal, +index);
+
 
 					// output.write(result+'\r\n');
 
@@ -143,12 +135,16 @@ function callOne(number:number, index:number, numbers:number[]){
 					// output.write(`\r\n${DELIMITER}\r\n`);
 					resolve(connection);
 				}catch(err){
-					logger.log(inspect`error: ${err}`);
+					logger.log(inspect`confimation failed: ${err}`);
+
+					if(err.message === 'timeout'){
+						interFace.end();
+						reject('timeout');
+					}
 				}
 			});
 
 			interFace.on('reject', reason=>{
-				clearTimeout(timeout);
 				interFace.end();
 				
 				logger.log(util.inspect(reason));
@@ -161,7 +157,6 @@ function callOne(number:number, index:number, numbers:number[]){
 			socket.once('error', (err:any)=>{
 				switch(err.code){
 					case "EHOSTUNREACH":
-						clearTimeout(timeout);
 						interFace.end();
 						
 						// output.write("derailed\r\n");
@@ -220,8 +215,14 @@ function callGroup(group:number[], callback:(err:Error, connections:Connection[]
 			}
 		}
 	))
-	.then(clients=>callback(null, clients.filter(x=>x)))
-	.catch(err=>callback(err, null));
+	.then(clients=>{
+		status.emit('end');
+		callback(null, clients.filter(x=>x));
+	})
+	.catch(err=>{
+		status.emit('end');
+		callback(err, null);
+	});
 
 	return status;
 }

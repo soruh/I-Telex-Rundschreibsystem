@@ -1,21 +1,26 @@
 import { Duplex } from "stream";
-import { logger, logStream,inspect } from "./util/logging";
+import { logger, logStream, inspect } from "./util/logging";
 
-function confirm(socket:Duplex, timeout:NodeJS.Timer, index:number):Promise<string>{
+function confirm(socket:Duplex, index?:number):Promise<string>{
 return new Promise((resolve, reject)=>{
-	logger.log(`confirming client ${index}`);
+	let timeout = setTimeout(()=>{
+		end(false, "timeout");
+	}, 10000);
+	logger.log(inspect`confirming client ${index==null?'caller':'client '+index}`);
 	// let loggingStream = new logStream(inspect`called client ${index}`, socket);
 
 	socket.write('@');
 
-	function end(success:boolean){
+	function end(success:boolean, message?:string){
 		// loggingStream.end();
-		logger.log(`${success?'confirmed':'failed to confirm'} client ${index}`);
+		logger.log(inspect`${success?'confirmed':'failed to confirm'} ${index==null?'caller':'client '+index}`);
 
 		socket.removeAllListeners('close');
 		socket.removeAllListeners('data');
 
-		socket.write('\r\n\n');
+		try{
+			socket.write('\r\n\n');
+		}catch(err){/**/}
 
 		clearInterval(timeoutCheckInterval);
 		clearTimeout(timeout);
@@ -24,7 +29,7 @@ return new Promise((resolve, reject)=>{
 		if(success){
 			resolve(buffer);
 		} else {
-			reject();
+			reject(message);
 		}
 	}
 
@@ -32,6 +37,8 @@ return new Promise((resolve, reject)=>{
 	let lastPackage = 0;
 	
 	socket.on('data', chunk=>{
+		// logger.log("recieved data");
+
 		buffer+=chunk.toString();
 
 		lastPackage = Date.now();
@@ -43,7 +50,9 @@ return new Promise((resolve, reject)=>{
 	let resolveTimeout:NodeJS.Timer;
 	// always resolve after 7,5 secs
 
-	socket.once('data',()=>{
+	socket.once('data', ()=>{
+		// logger.log("recieved initial data");
+
 		clearTimeout(timeout);
 		resolveTimeout = setTimeout(()=>{
 			end(true);
@@ -51,26 +60,32 @@ return new Promise((resolve, reject)=>{
 	});
 
 
-	socket.once('close',()=>{
-		logger.log('closed');
-		end(false);
+	socket.once('close', ()=>{
+		// logger.log("socket closed");
+		end(false, 'closed');
 	});
 
 
 	let timeoutCheckInterval = setInterval(()=>{
+		// logger.log("checking timeout");
+		// logger.log("last package: "+lastPackage+" ("+(Date.now()-lastPackage)+"ms ago)");
+		
 		// resolve if client didn't send data for 1 sec
 		if(!resolveTimeout){
+			// logger.log("!resolveTimeout");
 			return;
 		}
 
 		if((resolveTimeout as any)._destroyed){
+			// logger.log("resolveTimeout is destroyed");
 			clearInterval(timeoutCheckInterval);
 			return;
 		}
 		if(lastPackage !== 0&&Date.now()-lastPackage>1000){
+			// logger.log("more than 1000 ago");
 			end(true);
-		}	
-	}, 100);
+		}
+	}, 500);
 
 });
 }
