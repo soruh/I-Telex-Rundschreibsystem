@@ -7,7 +7,7 @@ const confirm_1 = require("./confirm");
 const fs_1 = require("fs");
 const path_1 = require("path");
 const zlib_1 = require("zlib");
-const IDENTIFIER = "11150 rundsen d";
+const config_1 = require("./config");
 function createLogStream(failed = false) {
     try {
         var logFileName = new Date().toISOString() + '.gz';
@@ -89,7 +89,7 @@ async function call(caller, numbers) {
                 logging_1.logger.log('called close');
             });
             connection.interface.internal.write('\r\n');
-            connection.interface.internal.write(IDENTIFIER);
+            connection.interface.internal.write(config_1.IDENTIFIER);
             connection.interface.internal.write('\r\nRundsenden');
             if (caller.identifier)
                 connection.interface.internal.write(' von ' + caller.identifier.replace(/[\r\n]/g, ''));
@@ -131,7 +131,7 @@ async function call(caller, numbers) {
                     async function confirmClient() {
                         function close() {
                             try {
-                                connection.interface.internal.write('\r\n' + IDENTIFIER + '\r\n\n');
+                                connection.interface.internal.write('\r\n' + config_1.IDENTIFIER + '\r\n\n');
                             }
                             catch (err) { /**/ }
                             connection.interface.once('end', () => { connection.socket.end(); });

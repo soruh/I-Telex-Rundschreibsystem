@@ -4,7 +4,7 @@ const logging_1 = require("./util/logging");
 function confirm(socket, index) {
     return new Promise((resolve, reject) => {
         let timeout = setTimeout(() => {
-            end(false, "timeout");
+            end(false, "df");
         }, 10000);
         logging_1.logger.log(logging_1.inspect `confirming client ${index == null ? 'caller' : 'client ' + index}`);
         // let loggingStream = new logStream(inspect`called client ${index}`, socket);
@@ -46,7 +46,7 @@ function confirm(socket, index) {
         });
         socket.once('close', () => {
             // logger.log("socket closed");
-            end(false, 'closed');
+            end(false, 'sbk');
         });
         let timeoutCheckInterval = setInterval(() => {
             // logger.log("checking timeout");

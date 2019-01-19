@@ -1,10 +1,10 @@
 import { Duplex } from "stream";
-import { logger, logStream, inspect } from "./util/logging";
+import { logger, inspect } from "./util/logging";
 
 function confirm(socket:Duplex, index?:number):Promise<string>{
 return new Promise((resolve, reject)=>{
 	let timeout = setTimeout(()=>{
-		end(false, "timeout");
+		end(false, "df");
 	}, 10000);
 	logger.log(inspect`confirming client ${index==null?'caller':'client '+index}`);
 	// let loggingStream = new logStream(inspect`called client ${index}`, socket);
@@ -62,7 +62,7 @@ return new Promise((resolve, reject)=>{
 
 	socket.once('close', ()=>{
 		// logger.log("socket closed");
-		end(false, 'closed');
+		end(false, 'sbk');
 	});
 
 

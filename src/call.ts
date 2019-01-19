@@ -8,9 +8,8 @@ import { join, dirname } from "path";
 import { createGzip } from "zlib";
 import Interface from "./interfaces/Interface";
 import { Socket } from "net";
+import { IDENTIFIER } from "./config";
 
-
-const IDENTIFIER = "11150 rundsen d";
 
 function createLogStream(failed=false){
 	try{	

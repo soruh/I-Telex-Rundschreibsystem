@@ -13,7 +13,7 @@ function explainErrorCode(code) {
     switch (code) {
         case 'EHOSTUNREACH':
         case 'ECONNREFUSED':
-            return 'derailed';
+            return 'nc';
         default:
             return code;
     }
@@ -118,20 +118,6 @@ function callOne(number, index, numbers) {
                 // output.write(`${reason}`); // \r\n is included in reject message
                 // output.write(`${DELIMITER}\r\n`);
                 reject(reason);
-            });
-            socket.once('error', (err) => {
-                switch (err.code) {
-                    case "EHOSTUNREACH":
-                        interFace.end();
-                        // output.write("derailed\r\n");
-                        // output.write(`${DELIMITER}\r\n`);
-                        break;
-                    case "ERR_STREAM_WRITE_AFTER_END":
-                        // ignore
-                        break;
-                    default:
-                        logging_1.logger.log('unexpected error: ' + err.code);
-                }
             });
             socket.on('error', (err) => {
                 if (err.code === "ERR_STREAM_WRITE_AFTER_END")

@@ -3,13 +3,15 @@ const infoEN =
 .replace(/\r/g, '').replace(/\n/g, '\r\n');
 
 const infoDE =
-`programmiert von: Paul Roemer
-github: github.com/soruh/I-Telex-Rundschreibsystem
+`--- kennungsgeberabfrage fehlercodes ---:
+sbk: die verbindung wurde waerend der abfrage getrennt
+nc : es konnte keine verbindung zum angerufenen hergestellt werden
+df : kein kennungsgeber / keine antwort
 
 
+--- nutzungsinformationen ---:
 durch nutzung dieses systems aktzeptiert
 der benutzer folgendes:
-
 
 der programmierer, sowie der betreiber dieses systems uebernehmen
 keinerlei verantworung fuer moeglichen missbrauch dieses
@@ -20,6 +22,10 @@ saemtliche versendeten nachrichten werden, absender und
 empfaengern zugeordnet, zur auswertung, im falle
 von missbrauch oder missbrauchsverdacht gespeichert.
 
+
+--- sonstiges ---:
+programmiert von: paul roemer
+github: github.com/soruh/i-telex-rundschreibsystem
 
 kontakt:
    email: mail(at)soruh.de
