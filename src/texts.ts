@@ -118,7 +118,7 @@ function getText(language:language, text:string, args?:any[]):string{
 
 	logger.log(inspect`\x1b[33mcould not find text ${text}\x1b[33m for language ${language}`);
 
-	return '/no text/';
+	return '/no translation/';
 }
 
 

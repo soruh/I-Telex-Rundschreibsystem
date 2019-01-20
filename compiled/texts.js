@@ -97,7 +97,7 @@ function getText(language, text, args) {
         }
     }
     logging_1.logger.log(logging_1.inspect `\x1b[33mcould not find text ${text}\x1b[33m for language ${language}`);
-    return '/no text/';
+    return '/no translation/';
 }
 exports.getText = getText;
 function isLanguage(language) {
