@@ -3,7 +3,11 @@ import { logger, inspect } from "./util/logging";
 type language = "german"|"english";
 
 // tslint:disable:object-literal-key-quotes
-const texts = {
+const texts: {
+	[index: string]:{ // ([index: language])
+		[index: string]: string|string[];
+	};
+} = {
 	"german":{
 		"modeChange": "neuer modus",
 		"help": "hilfe fuer modus",
