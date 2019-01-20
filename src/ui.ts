@@ -1,7 +1,7 @@
 import { ReadLine } from "readline";
 import { isBlacklisted, updateBlacklistForNumber } from "./blacklist";
 import { Peer_search } from "./util/ITelexServerCom";
-import { logger } from "./util/logging";
+import { logger, inspect } from "./util/logging";
 import { Writable } from "stream";
 import { getText, isLanguage, getValidLanguages } from "./texts";
 import getInfo from "./info";
@@ -139,7 +139,7 @@ const commands_main:CommandList = {
 			if(isLanguage(answer)){
 				return {
 					newLanguage: answer as language,
-					response: getText(answer as language, 'changed language', [answer]),
+					response: getText(answer as language, 'introduction'),
 				};
 			}else{
 				return {
@@ -246,6 +246,8 @@ function printHelp(language:language, mode:string){
 }
 
 async function handleCommand(input:string, mode:string, callList:number[], language:language):Promise<commandResult>{
+	if(input === '') return {};
+
 	const identifier = input[0];
 	const answer = input.slice(1);
 
@@ -286,13 +288,19 @@ function ui(readline:ReadLine&{output: Writable}):Promise<{
 		let callList = [];
 		let language:language = "german";
 
+		readline.output.write(getText(language, 'introduction')+'\r\n');
+			
+
 		function promptCommand(){
 			readline.question('- ', async answer=>{
 				readline.output.write('\r');
 				
 				const result = await handleCommand(answer, mode, callList, language);
 
-				if(result.newLanguage) language = result.newLanguage;
+				if(result.newLanguage){
+					language = result.newLanguage;
+					readline.output.write(getText(language, 'changed language', [language])+'\r\n');
+				}
 
 				if(result.response) readline.output.write(result.response+'\r\n');
 				

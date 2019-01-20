@@ -9,6 +9,9 @@ const texts: {
 	};
 } = {
 	"german":{
+		"welcome": ["sie haben den rundsendedienst unter '", "' erreicht"],
+		"introduction": "bitte kommandos, gefolgt von einem parameter, wenn benoetigt, eingeben.\r\n(LF) zum bestaetigen, h fuer hilfe",
+
 		"modeChange": "neuer modus",
 		"help": "hilfe fuer modus",
 		"help explaination": "(komando) (parametertyp): (funktion)",
@@ -55,6 +58,9 @@ const texts: {
 		"unknown error": "unbekannter fehler",
 	},
 	"english":{
+		"welcome": ["you have reaced the broadcasting service under '", "'"], // not used
+		"introduction": "Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help",
+
 		"modeChange": "new mode",
 		"help": "help for mode",
 		"help explaination": "(command) (type of argument): (function)",

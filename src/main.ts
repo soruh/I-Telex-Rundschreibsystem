@@ -8,9 +8,10 @@ import BaudotInterface from "./interfaces/BaudotInterface/BaudotInterface";
 import ui from "./ui";
 import Interface from "./interfaces/Interface";
 import call from "./call";
-import { PORT } from "./config";
+import { PORT, IDENTIFIER } from "./config";
 import { baudotModeUnknown } from "./util/baudot";
-import { Writable } from "stream";
+import { Writable, Transform } from "stream";
+import { getText } from "./texts";
 
 declare global {
 	interface Buffer {
@@ -24,6 +25,12 @@ function readNullTermString(encoding: string = "utf8", start: number = 0, end: n
 	return this.toString(encoding, start, stop);
 };
 
+
+class RemoveCr extends Transform {
+	public _transform(chunk: any, encoding: string, callback: (error?: Error, data?: any) => void){
+		callback(null, chunk.toString().replace(/\r/g, ''));
+	}
+}
 
 
 const server = new net.Server();
@@ -68,7 +75,7 @@ server.on('connection', socket=>{
 
 		async function handleClient(){
 			interFace.internal.write('\r\n\n');
-			interFace.internal.write("Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help\r\n");
+			interFace.internal.write(getText('german', 'welcome', [IDENTIFIER])+'\r\n\n');
 
 			interFace.internal.resume();
 
@@ -89,12 +96,17 @@ server.on('connection', socket=>{
 				// }
 			}
 
+			const removedCr = new RemoveCr();
+			interFace.internal.pipe(removedCr);
+
 			const rl = readline.createInterface({
-				input:interFace.internal,
-				output:interFace.internal,
+				input: removedCr,
+				output: interFace.internal,
 			});
 			
 			const result = await ui(rl as readline.ReadLine&{output:Writable});
+			
+			interFace.internal.unpipe(removedCr);
 
 			switch(result.nextAction){
 				case 'call':
@@ -114,21 +126,27 @@ server.on('connection', socket=>{
 
 			logger.log(inspect`ui actions finished`);
 		}
+		
+		function connectSocket(relayChunk=true){
+			if(relayChunk) interFace.external.write(chunk);
+			
+			socket.pipe(interFace.external);
+			interFace.external.pipe(socket);
+		}
 
 		if(interFace instanceof BaudotInterface){
 			interFace.on('call', ext=>{ // for baudot interface
 				handleClient();
-				// logger.log(inspect`baudot client calling extension: ${ext}`);
+				logger.log(inspect`baudot client calling extension: ${ext}`);
 			});
+
+			connectSocket(true);
 		}else{
+			connectSocket(false);
+
 			handleClient();
 			logger.log(inspect`ascii client calling`);
 		}
-
-		interFace.external.write(chunk);
-		
-		socket.pipe(interFace.external);
-		interFace.external.pipe(socket);
 	});
 });
 server.listen(PORT, ()=>{

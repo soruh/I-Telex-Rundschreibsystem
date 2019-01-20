@@ -111,7 +111,7 @@ const commands_main = {
             if (texts_1.isLanguage(answer)) {
                 return {
                     newLanguage: answer,
-                    response: texts_1.getText(answer, 'changed language', [answer]),
+                    response: texts_1.getText(answer, 'introduction'),
                 };
             }
             else {
@@ -208,6 +208,8 @@ function printHelp(language, mode) {
     return helpString;
 }
 async function handleCommand(input, mode, callList, language) {
+    if (input === '')
+        return {};
     const identifier = input[0];
     const answer = input.slice(1);
     let number = parseInt(answer);
@@ -243,12 +245,15 @@ function ui(readline) {
         let mode = 'main';
         let callList = [];
         let language = "german";
+        readline.output.write(texts_1.getText(language, 'introduction') + '\r\n');
         function promptCommand() {
             readline.question('- ', async (answer) => {
                 readline.output.write('\r');
                 const result = await handleCommand(answer, mode, callList, language);
-                if (result.newLanguage)
+                if (result.newLanguage) {
                     language = result.newLanguage;
+                    readline.output.write(texts_1.getText(language, 'changed language', [language]) + '\r\n');
+                }
                 if (result.response)
                     readline.output.write(result.response + '\r\n');
                 if (result.newMode) {

@@ -9,12 +9,19 @@ const ui_1 = require("./ui");
 const call_1 = require("./call");
 const config_1 = require("./config");
 const baudot_1 = require("./util/baudot");
+const stream_1 = require("stream");
+const texts_1 = require("./texts");
 Buffer.prototype.readNullTermString =
     function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
         let firstZero = this.indexOf(0, start);
         let stop = firstZero >= start && firstZero <= end ? firstZero : end;
         return this.toString(encoding, start, stop);
     };
+class RemoveCr extends stream_1.Transform {
+    _transform(chunk, encoding, callback) {
+        callback(null, chunk.toString().replace(/\r/g, ''));
+    }
+}
 const server = new net.Server();
 server.on('connection', socket => {
     let interFace;
@@ -45,7 +52,7 @@ server.on('connection', socket => {
         });
         async function handleClient() {
             interFace.internal.write('\r\n\n');
-            interFace.internal.write("Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help\r\n");
+            interFace.internal.write(texts_1.getText('german', 'welcome', [config_1.IDENTIFIER]) + '\r\n\n');
             interFace.internal.resume();
             if (interFace instanceof BaudotInterface_1.default) {
                 if (!interFace.drained) {
@@ -61,11 +68,14 @@ server.on('connection', socket => {
                 // 	logger.log('was already drained');
                 // }
             }
+            const removedCr = new RemoveCr();
+            interFace.internal.pipe(removedCr);
             const rl = readline.createInterface({
-                input: interFace.internal,
+                input: removedCr,
                 output: interFace.internal,
             });
             const result = await ui_1.default(rl);
+            interFace.internal.unpipe(removedCr);
             switch (result.nextAction) {
                 case 'call':
                     await call_1.default(result.language, {
@@ -81,19 +91,24 @@ server.on('connection', socket => {
             }
             logging_1.logger.log(logging_1.inspect `ui actions finished`);
         }
+        function connectSocket(relayChunk = true) {
+            if (relayChunk)
+                interFace.external.write(chunk);
+            socket.pipe(interFace.external);
+            interFace.external.pipe(socket);
+        }
         if (interFace instanceof BaudotInterface_1.default) {
             interFace.on('call', ext => {
                 handleClient();
-                // logger.log(inspect`baudot client calling extension: ${ext}`);
+                logging_1.logger.log(logging_1.inspect `baudot client calling extension: ${ext}`);
             });
+            connectSocket(true);
         }
         else {
+            connectSocket(false);
             handleClient();
             logging_1.logger.log(logging_1.inspect `ascii client calling`);
         }
-        interFace.external.write(chunk);
-        socket.pipe(interFace.external);
-        interFace.external.pipe(socket);
     });
 });
 server.listen(config_1.PORT, () => {
