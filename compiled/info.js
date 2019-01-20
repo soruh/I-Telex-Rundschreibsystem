@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const texts_1 = require("./texts");
 const infoEN = `No english info yet`
     .replace(/\r/g, '').replace(/\n/g, '\r\n');
 const infoDE = `--- kennungsgeberabfrage fehlercodes ---:
@@ -27,10 +28,16 @@ programmiert von: paul roemer
 github: github.com/soruh/i-telex-rundschreibsystem
 
 kontakt:
-   email: mail(at)soruh.de
-   telex: 41235
+	email: mail(at)soruh.de
+	telex: 41235
 `
     .replace(/\r/g, '').replace(/\n/g, '\r\n');
-// const info = `DE:\r\n${infoDE}\r\n\nEN:\r\n${infoEN}`;
-const info = infoDE;
-exports.default = info;
+function getInfo(language) {
+    switch (language) {
+        case "german":
+            return infoDE;
+        default:
+            return texts_1.getText(language, 'no info') + ': ' + language;
+    }
+}
+exports.default = getInfo;

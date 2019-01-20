@@ -68,7 +68,7 @@ server.on('connection', socket => {
             const result = await ui_1.default(rl);
             switch (result.nextAction) {
                 case 'call':
-                    await call_1.default({
+                    await call_1.default(result.language, {
                         interface: interFace,
                         socket,
                     }, result.callList);

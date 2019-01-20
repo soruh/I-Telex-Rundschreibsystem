@@ -3,21 +3,25 @@ import { isBlacklisted, updateBlacklistForNumber } from "./blacklist";
 import { Peer_search } from "./util/ITelexServerCom";
 import { logger } from "./util/logging";
 import { Writable } from "stream";
-import info from "./info";
+import { getText, isLanguage, getValidLanguages } from "./texts";
+import getInfo from "./info";
+import { PackageData_decoded_5 } from "./util/ITelexServerComTypes";
 
+type language = "german"|"english";
 
 interface commandResult{
 	end?:boolean;
 	response?:string;
 	newMode?:string;
 	nextAction?:string;
+	newLanguage?:language;
 }
 
 
 interface Command {
-	help:string;
+	help: boolean;
 	needsNumber: boolean;
-	action: (number:number, callList:number[], answer?:string)=>commandResult|Promise<commandResult>;
+	action: (language:language, number:number, callList:number[], answer?:string)=>commandResult|Promise<commandResult>;
 }
 
 interface CommandList{
@@ -26,32 +30,29 @@ interface CommandList{
 
 const commands_main:CommandList = {
 	'h': {
-		// help: "prints this help",
-		help: null,
+		help: false,
 		needsNumber: null,
-		action: ()=>{
+		action: language=>{
 			return {
-				end: false,
-				response: printHelp('main'),
+				response: printHelp(language, 'main'),
 			};
 		},
 	},
 	'+': {
-		help: "add a number to call list",
+		help: true,
 		needsNumber:true,
-		action: (number, callList)=>{
+		action: (language, number, callList)=>{
 			if(callList.indexOf(number) === -1){
 				callList.push(number);
 			}
 			return {
-				end: false,
 			};
 		},
 	},
 	'-': {
-		help: "remove a number from call list",
+		help: true,
 		needsNumber:true,
-		action: (number, callList)=>{
+		action: (language, number, callList)=>{
 			const index = callList.indexOf(number);
 
 			if(index > -1){
@@ -59,34 +60,31 @@ const commands_main:CommandList = {
 			}
 
 			return {
-				end: false,
 			};
 		},
 	},
 	'?': {
-		help: "print call list",
+		help: true,
 		needsNumber: null,
-		action: (number, callList)=>{
+		action: (language, number, callList)=>{
 			return {
-				end: false,
 				response: printCallList(callList),
 			};
 		},
 	},
 	'b': {
-		help: "modify blacklist",
+		help: true,
 		needsNumber: null,
 		action: ()=>{
 			return {
-				end: false,
 				newMode: 'blacklist',
 			};
 		},
 	},
 	'=': {
-		help: "call numbers in call list",
+		help: true,
 		needsNumber: null,
-		action: (number, callList)=>{
+		action: (language, number, callList)=>{
 			return {
 				end: true,
 				nextAction:'call',
@@ -94,36 +92,38 @@ const commands_main:CommandList = {
 		},
 	},
 	's': {
-		help: "search for numbers (not in the call list) by name",
+		help: true,
 		needsNumber: false,
-		action: async (number, callList, answer)=>{
-			const entries = await Peer_search(answer);
+		action: async (language, number, callList, answer)=>{
+			let entries:PackageData_decoded_5[] = [];
+			try{
+				entries = await Peer_search(answer);
+			}catch(err){/**/}
+
 			const maxLength = Math.max(...entries.map(x=>x.number.toString().length));
 
 			const newEntries = entries.filter(x=>!~callList.indexOf(x.number));
 			if(newEntries.length){
 				var response = newEntries.map(x=>`${x.number.toString().padStart(maxLength)}: ${x.name}`).join('\r\n');
 			}else{
-				var response = 'no new entries found';
+				var response = getText(language, 'no new entries');
 			}
 			return {
-				end: false,
 				response,
 			};
 		},
 	},
 	'i': {
-		help: "general information",
+		help: true,
 		needsNumber: null,
-		action: ()=>{
+		action: language=>{
 			return {
-				end: false,
-				response: info,
+				response: getInfo(language),
 			};
 		},
 	},
 	'q': {
-		help: "end the connection",
+		help: true,
 		needsNumber: null,
 		action: ()=>{
 			return {
@@ -132,24 +132,43 @@ const commands_main:CommandList = {
 			};
 		},
 	},
+	'l': {
+		help: true,
+		needsNumber: false,
+		action: (language, number, callList, answer)=>{
+			if(isLanguage(answer)){
+				return {
+					newLanguage: answer as language,
+					response: getText(answer as language, 'changed language', [answer]),
+				};
+			}else{
+				return {
+					response: 
+						getText(language, 'not a language', [answer])+
+						'\r\n'+
+						getText(language, 'valid languages')+
+						': '+
+						getValidLanguages().join(', '),
+				};
+			}
+		},
+	},
 };
 
 const commands_blacklist:CommandList = {
 	'h': {
-		// help: "prints this help",
-		help: null,
+		help: false,
 		needsNumber: null,
-		action: ()=>{
+		action: (language)=>{
 			return {
-				end: false,
-				response: printHelp('blacklist'),
+				response: printHelp(language, 'blacklist'),
 			};
 		},
 	},
 	'.': {
-		help: "(un-)blacklist a number",
+		help: true,
 		needsNumber:true,
-		action: async number=>{
+		action: async (language, number)=>{
 			if(!number){
 				throw new Error('not a Number');
 			}
@@ -157,26 +176,29 @@ const commands_blacklist:CommandList = {
 			return {
 				end: true,
 				nextAction:'end',
-				response: `${number} will be called in 30sec to change their blacklist status`,
+				response: `${number} ${getText(language, 'blacklist anounce call')}`,
 			};
 		},
 	},
 	'?': {
-		help: "test if a number is blacklisted",
+		help: true,
 		needsNumber:true,
-		action: number=>{
+		action: (language, number)=>{
 			return {
-				end: false,
-				response: `${number} is ${isBlacklisted(number)?'':'not'} blacklisted.`,
+				response: getText(language, 'blacklisted', [
+					number,
+					isBlacklisted(number)?
+					'':
+					getText(language, 'not'),
+				]),
 			};
 		},
 	},
 	'b': {
-		help: "go back to the main menu",
+		help: true,
 		needsNumber: null,
 		action: ()=>{
 			return {
-				end: false,
 				newMode: 'main',
 			};
 		},
@@ -205,25 +227,25 @@ function printCallList(callList:number[]){
 	return lines.join('\r\n');
 }
 
-function printHelp(mode:string){
+function printHelp(language:language, mode:string){
 	const commandsForMode = commands[mode];
 	if(!commandsForMode) throw new Error("invalid mode");
 
-	let helpString = `help for mode: ${mode}\r\n\n`;
-	helpString += "(command) (type of argument): (function)\r\n";
+	let helpString = `${getText(language, 'help')}: ${mode}\r\n\n`;
+	helpString += getText(language, "help explaination")+'\r\n';
 	for(const key in commandsForMode){
 		const command = commandsForMode[key];
 		if(command.help){
 			const argType = command.needsNumber===null?' ':(command.needsNumber?'n':'t');
 
-			helpString += `${key} (${argType}): ${command.help}\r\n`;
+			helpString += `${key} (${argType}): ${getText(language, `help_${mode[0]}_${key}`)}\r\n`;
 		}
 	}
 
 	return helpString;
 }
 
-async function handleCommand(input:string, mode:string, callList:number[]):Promise<commandResult>{
+async function handleCommand(input:string, mode:string, callList:number[], language:language):Promise<commandResult>{
 	const identifier = input[0];
 	const answer = input.slice(1);
 
@@ -231,28 +253,25 @@ async function handleCommand(input:string, mode:string, callList:number[]):Promi
 	if(isNaN(number)) number = null;
 
 	const commandsForMode = commands[mode];
-	if(!commandsForMode) throw new Error("invalid mode");
+	if(!commandsForMode) throw new Error('invalid mode');
 
 	if(commandsForMode.hasOwnProperty(identifier)){
 		try{
 			if(commandsForMode[identifier].needsNumber === true&&!number){
-				throw new Error('no number specified.');
+				throw new Error(getText(language, 'no number'));
 			}else if(commandsForMode[identifier].needsNumber === false&&!answer){
-				throw new Error('no argument specified.');
+				throw new Error(getText(language, 'no argument'));
 			}
 
-			return await commandsForMode[identifier].action(number, callList, answer);
+			return await commandsForMode[identifier].action(language, number, callList, answer);
 		}catch(err){
 			return {
-				end: false,
-				response: err.message||err||'unknown error',
+				response: err.message||err||getText(language, 'unknown error'),
 			};
 		}
 	}else{
-		logger.log(`invalid command: ${answer}`);
 		return {
-			end: false,
-			response: "invalid command",
+			response: getText(language, 'invalid command'),
 		};
 	}
 }
@@ -260,22 +279,26 @@ async function handleCommand(input:string, mode:string, callList:number[]):Promi
 function ui(readline:ReadLine&{output: Writable}):Promise<{
 	nextAction: string,
 	callList: number[],
+	language: language,
 }>{
 	return new Promise((resolve, reject) => {
 		let mode = 'main';
 		let callList = [];
+		let language:language = "german";
 
 		function promptCommand(){
 			readline.question('- ', async answer=>{
 				readline.output.write('\r');
 				
-				const result = await handleCommand(answer, mode, callList);
+				const result = await handleCommand(answer, mode, callList, language);
+
+				if(result.newLanguage) language = result.newLanguage;
 
 				if(result.response) readline.output.write(result.response+'\r\n');
 				
 				if(result.newMode){
 					mode = result.newMode;
-					readline.output.write(`mode: ${mode}\r\n`);
+					readline.output.write(`${getText(language, "modeChange")}: ${mode}\r\n`);
 				}
 
 				if(result.end){
@@ -283,6 +306,7 @@ function ui(readline:ReadLine&{output: Writable}):Promise<{
 					resolve({
 						nextAction: result.nextAction,
 						callList,
+						language,
 					});
 				}else{
 					promptCommand();

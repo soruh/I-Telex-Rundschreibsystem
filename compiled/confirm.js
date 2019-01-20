@@ -11,7 +11,7 @@ function confirm(socket, index) {
         socket.write('@');
         function end(success, message) {
             // loggingStream.end();
-            logging_1.logger.log(logging_1.inspect `${success ? 'confirmed' : 'failed to confirm'} ${index == null ? 'caller' : 'client ' + index}`);
+            logging_1.logger.log(logging_1.inspect `confirmation for ${index == null ? 'caller' : 'client ' + index} ${success ? 'succeeded' : 'failed'}`);
             socket.removeAllListeners('close');
             socket.removeAllListeners('data');
             try {

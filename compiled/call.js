@@ -8,6 +8,7 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 const zlib_1 = require("zlib");
 const config_1 = require("./config");
+const texts_1 = require("./texts");
 function createLogStream(failed = false) {
     try {
         var logFileName = new Date().toISOString() + '.gz';
@@ -39,11 +40,16 @@ function createLogStream(failed = false) {
         }
     }
 }
-async function call(caller, numbers) {
+async function call(language, caller, numbers) {
     let confimedCaller = false;
     let resolveCallerConfirmation = () => { };
     caller.interface.internal.write('\r\n');
-    caller.interface.internal.write(`calling ${numbers.length} number${numbers.length === 1 ? '' : 's'}:\r\n`);
+    caller.interface.internal.write(texts_1.getText(language, 'calling', [
+        numbers.length,
+        numbers.length === 1 ?
+            texts_1.getText(language, 'peer') :
+            texts_1.getText(language, 'peers'),
+    ]) + '\r\n');
     const status = callGroup_1.default(numbers, async (error, connections) => {
         if (error) {
             logging_1.logger.log('error', error);
@@ -62,7 +68,7 @@ async function call(caller, numbers) {
         });
         logging_1.logger.log('recieved caller confirmation');
         if (connections.length === 0) {
-            caller.interface.internal.write('No peers could be reached.\r\n');
+            caller.interface.internal.write(texts_1.getText(language, 'none reachable') + '\r\n');
             caller.interface.once('end', () => caller.socket.end());
             caller.interface.end(); // end the interface
             return;
@@ -80,7 +86,12 @@ async function call(caller, numbers) {
         }) + '\n');
         caller.interface.internal.pipe(logFile);
         caller.interface.once('end', handleAbort);
-        caller.interface.internal.write(`Now connected to ${connections.length} peer${connections.length === 1 ? '' : 's'}. Type '+++' to end message\r\n`);
+        caller.interface.internal.write(texts_1.getText(language, 'now connected', [
+            connections.length,
+            connections.length === 1 ?
+                texts_1.getText(language, 'peer') :
+                texts_1.getText(language, 'peers'),
+        ]) + '\r\n');
         for (let connection of connections) {
             connection.socket.on('end', () => {
                 logging_1.logger.log('called end');
@@ -103,7 +114,12 @@ async function call(caller, numbers) {
             for (let connection of connections) {
                 caller.interface.internal.pipe(connection.interface.internal, { end: false });
             }
-            caller.interface.internal.write(`\r\n\ntransmission over. confirming ${connections.length} peer${connections.length === 1 ? '' : 's'}.\r\n`);
+            caller.interface.internal.write('\r\n\n' + texts_1.getText(language, 'transmission over', [
+                connections.length,
+                connections.length === 1 ?
+                    texts_1.getText(language, 'peer') :
+                    texts_1.getText(language, 'peers'),
+            ]) + '\r\n');
             logging_1.logger.log("message ended");
             // logger.log(connections);
             logFile.end();
@@ -154,7 +170,7 @@ async function call(caller, numbers) {
             }
             await Promise.all(promises);
             logging_1.logger.log("confirmed all peers");
-            caller.interface.internal.write('confirmation finished\r\n\r\n');
+            caller.interface.internal.write(texts_1.getText(language, "confirmation finished") + '\r\n\r\n');
             caller.interface.removeListener('end', handleAbort); // don't handle aborts if not aborted
             caller.interface.once('end', () => caller.socket.end());
             caller.interface.end(); // end the interface

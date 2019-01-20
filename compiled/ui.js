@@ -2,69 +2,61 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const blacklist_1 = require("./blacklist");
 const ITelexServerCom_1 = require("./util/ITelexServerCom");
-const logging_1 = require("./util/logging");
+const texts_1 = require("./texts");
 const info_1 = require("./info");
 const commands_main = {
     'h': {
-        // help: "prints this help",
-        help: null,
+        help: false,
         needsNumber: null,
-        action: () => {
+        action: language => {
             return {
-                end: false,
-                response: printHelp('main'),
+                response: printHelp(language, 'main'),
             };
         },
     },
     '+': {
-        help: "add a number to call list",
+        help: true,
         needsNumber: true,
-        action: (number, callList) => {
+        action: (language, number, callList) => {
             if (callList.indexOf(number) === -1) {
                 callList.push(number);
             }
-            return {
-                end: false,
-            };
+            return {};
         },
     },
     '-': {
-        help: "remove a number from call list",
+        help: true,
         needsNumber: true,
-        action: (number, callList) => {
+        action: (language, number, callList) => {
             const index = callList.indexOf(number);
             if (index > -1) {
                 callList.splice(index, 1);
             }
-            return {
-                end: false,
-            };
+            return {};
         },
     },
     '?': {
-        help: "print call list",
+        help: true,
         needsNumber: null,
-        action: (number, callList) => {
+        action: (language, number, callList) => {
             return {
-                end: false,
                 response: printCallList(callList),
             };
         },
     },
     'b': {
-        help: "modify blacklist",
+        help: true,
         needsNumber: null,
         action: () => {
             return {
-                end: false,
                 newMode: 'blacklist',
             };
         },
     },
     '=': {
-        help: "call numbers in call list",
+        help: true,
         needsNumber: null,
-        action: (number, callList) => {
+        action: (language, number, callList) => {
             return {
                 end: true,
                 nextAction: 'call',
@@ -72,36 +64,38 @@ const commands_main = {
         },
     },
     's': {
-        help: "search for numbers (not in the call list) by name",
+        help: true,
         needsNumber: false,
-        action: async (number, callList, answer) => {
-            const entries = await ITelexServerCom_1.Peer_search(answer);
+        action: async (language, number, callList, answer) => {
+            let entries = [];
+            try {
+                entries = await ITelexServerCom_1.Peer_search(answer);
+            }
+            catch (err) { /**/ }
             const maxLength = Math.max(...entries.map(x => x.number.toString().length));
             const newEntries = entries.filter(x => !~callList.indexOf(x.number));
             if (newEntries.length) {
                 var response = newEntries.map(x => `${x.number.toString().padStart(maxLength)}: ${x.name}`).join('\r\n');
             }
             else {
-                var response = 'no new entries found';
+                var response = texts_1.getText(language, 'no new entries');
             }
             return {
-                end: false,
                 response,
             };
         },
     },
     'i': {
-        help: "general information",
+        help: true,
         needsNumber: null,
-        action: () => {
+        action: language => {
             return {
-                end: false,
-                response: info_1.default,
+                response: info_1.default(language),
             };
         },
     },
     'q': {
-        help: "end the connection",
+        help: true,
         needsNumber: null,
         action: () => {
             return {
@@ -110,23 +104,42 @@ const commands_main = {
             };
         },
     },
+    'l': {
+        help: true,
+        needsNumber: false,
+        action: (language, number, callList, answer) => {
+            if (texts_1.isLanguage(answer)) {
+                return {
+                    newLanguage: answer,
+                    response: texts_1.getText(answer, 'changed language', [answer]),
+                };
+            }
+            else {
+                return {
+                    response: texts_1.getText(language, 'not a language', [answer]) +
+                        '\r\n' +
+                        texts_1.getText(language, 'valid languages') +
+                        ': ' +
+                        texts_1.getValidLanguages().join(', '),
+                };
+            }
+        },
+    },
 };
 const commands_blacklist = {
     'h': {
-        // help: "prints this help",
-        help: null,
+        help: false,
         needsNumber: null,
-        action: () => {
+        action: (language) => {
             return {
-                end: false,
-                response: printHelp('blacklist'),
+                response: printHelp(language, 'blacklist'),
             };
         },
     },
     '.': {
-        help: "(un-)blacklist a number",
+        help: true,
         needsNumber: true,
-        action: async (number) => {
+        action: async (language, number) => {
             if (!number) {
                 throw new Error('not a Number');
             }
@@ -134,26 +147,29 @@ const commands_blacklist = {
             return {
                 end: true,
                 nextAction: 'end',
-                response: `${number} will be called in 30sec to change their blacklist status`,
+                response: `${number} ${texts_1.getText(language, 'blacklist anounce call')}`,
             };
         },
     },
     '?': {
-        help: "test if a number is blacklisted",
+        help: true,
         needsNumber: true,
-        action: number => {
+        action: (language, number) => {
             return {
-                end: false,
-                response: `${number} is ${blacklist_1.isBlacklisted(number) ? '' : 'not'} blacklisted.`,
+                response: texts_1.getText(language, 'blacklisted', [
+                    number,
+                    blacklist_1.isBlacklisted(number) ?
+                        '' :
+                        texts_1.getText(language, 'not'),
+                ]),
             };
         },
     },
     'b': {
-        help: "go back to the main menu",
+        help: true,
         needsNumber: null,
         action: () => {
             return {
-                end: false,
                 newMode: 'main',
             };
         },
@@ -176,22 +192,22 @@ function printCallList(callList) {
     }
     return lines.join('\r\n');
 }
-function printHelp(mode) {
+function printHelp(language, mode) {
     const commandsForMode = commands[mode];
     if (!commandsForMode)
         throw new Error("invalid mode");
-    let helpString = `help for mode: ${mode}\r\n\n`;
-    helpString += "(command) (type of argument): (function)\r\n";
+    let helpString = `${texts_1.getText(language, 'help')}: ${mode}\r\n\n`;
+    helpString += texts_1.getText(language, "help explaination") + '\r\n';
     for (const key in commandsForMode) {
         const command = commandsForMode[key];
         if (command.help) {
             const argType = command.needsNumber === null ? ' ' : (command.needsNumber ? 'n' : 't');
-            helpString += `${key} (${argType}): ${command.help}\r\n`;
+            helpString += `${key} (${argType}): ${texts_1.getText(language, `help_${mode[0]}_${key}`)}\r\n`;
         }
     }
     return helpString;
 }
-async function handleCommand(input, mode, callList) {
+async function handleCommand(input, mode, callList, language) {
     const identifier = input[0];
     const answer = input.slice(1);
     let number = parseInt(answer);
@@ -199,29 +215,26 @@ async function handleCommand(input, mode, callList) {
         number = null;
     const commandsForMode = commands[mode];
     if (!commandsForMode)
-        throw new Error("invalid mode");
+        throw new Error('invalid mode');
     if (commandsForMode.hasOwnProperty(identifier)) {
         try {
             if (commandsForMode[identifier].needsNumber === true && !number) {
-                throw new Error('no number specified.');
+                throw new Error(texts_1.getText(language, 'no number'));
             }
             else if (commandsForMode[identifier].needsNumber === false && !answer) {
-                throw new Error('no argument specified.');
+                throw new Error(texts_1.getText(language, 'no argument'));
             }
-            return await commandsForMode[identifier].action(number, callList, answer);
+            return await commandsForMode[identifier].action(language, number, callList, answer);
         }
         catch (err) {
             return {
-                end: false,
-                response: err.message || err || 'unknown error',
+                response: err.message || err || texts_1.getText(language, 'unknown error'),
             };
         }
     }
     else {
-        logging_1.logger.log(`invalid command: ${answer}`);
         return {
-            end: false,
-            response: "invalid command",
+            response: texts_1.getText(language, 'invalid command'),
         };
     }
 }
@@ -229,21 +242,25 @@ function ui(readline) {
     return new Promise((resolve, reject) => {
         let mode = 'main';
         let callList = [];
+        let language = "german";
         function promptCommand() {
             readline.question('- ', async (answer) => {
                 readline.output.write('\r');
-                const result = await handleCommand(answer, mode, callList);
+                const result = await handleCommand(answer, mode, callList, language);
+                if (result.newLanguage)
+                    language = result.newLanguage;
                 if (result.response)
                     readline.output.write(result.response + '\r\n');
                 if (result.newMode) {
                     mode = result.newMode;
-                    readline.output.write(`mode: ${mode}\r\n`);
+                    readline.output.write(`${texts_1.getText(language, "modeChange")}: ${mode}\r\n`);
                 }
                 if (result.end) {
                     readline.close();
                     resolve({
                         nextAction: result.nextAction,
                         callList,
+                        language,
                     });
                 }
                 else {

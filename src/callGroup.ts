@@ -157,8 +157,12 @@ function callOne(number:number, index:number, numbers:number[]){
 				if((err as Error&{code:string}).code === "ERR_STREAM_WRITE_AFTER_END") return;
 				
 				socket.end();
-				logger.log(inspect`socket error: ${err}`);
-				reject(explainErrorCode((err as Error&{code:string}).code));
+				const explainedError = explainErrorCode((err as Error&{code:string}).code);
+				
+				const expectedError = explainedError === 'nc';
+				logger.log(inspect`client socket for ${peer.number} had an ${expectedError?'expected':'unexpected'} error${expectedError?'':': '}${expectedError?'':err}`);
+				
+				reject(explainedError);
 			});
 
 			socket.on('close', ()=>{

@@ -98,7 +98,7 @@ server.on('connection', socket=>{
 
 			switch(result.nextAction){
 				case 'call':
-					await call({
+					await call(result.language ,{
 						interface:interFace,
 						socket,
 					}, result.callList);

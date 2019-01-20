@@ -9,6 +9,7 @@ import { createGzip } from "zlib";
 import Interface from "./interfaces/Interface";
 import { Socket } from "net";
 import { IDENTIFIER } from "./config";
+import { getText } from "./texts";
 
 
 function createLogStream(failed=false){
@@ -51,15 +52,22 @@ interface Caller {
 	interface:Interface;
 	identifier?:string;
 }
+type language = "german"|"english";
 
-async function call(caller:Caller, numbers:number[]){
+
+async function call(language:language, caller:Caller, numbers:number[]){
 
 	let confimedCaller = false;
 	let resolveCallerConfirmation = ()=>{/**/};
 
 
 	caller.interface.internal.write('\r\n');
-	caller.interface.internal.write(`calling ${numbers.length} number${numbers.length===1?'':'s'}:\r\n`);
+	caller.interface.internal.write(getText(language, 'calling', [
+		numbers.length,
+		numbers.length===1?
+		getText(language, 'peer'):
+		getText(language, 'peers'),
+	])+'\r\n');
 	const status = callGroup(numbers, async (error, connections)=>{
 		if(error){
 			logger.log('error', error);
@@ -81,7 +89,7 @@ async function call(caller:Caller, numbers:number[]){
 		logger.log('recieved caller confirmation');
 
 		if(connections.length === 0){
-			caller.interface.internal.write('No peers could be reached.\r\n');
+			caller.interface.internal.write(getText(language, 'none reachable')+'\r\n');
 			
 
 			caller.interface.once('end', ()=>caller.socket.end());
@@ -107,7 +115,12 @@ async function call(caller:Caller, numbers:number[]){
 
 		caller.interface.once('end', handleAbort);
 
-		caller.interface.internal.write(`Now connected to ${connections.length} peer${connections.length===1?'':'s'}. Type '+++' to end message\r\n`);
+		caller.interface.internal.write(getText(language, 'now connected', [
+			connections.length,
+			connections.length===1?
+			getText(language, 'peer'):
+			getText(language, 'peers'),
+		])+'\r\n');
 		
 		for(let connection of connections){
 
@@ -138,7 +151,12 @@ async function call(caller:Caller, numbers:number[]){
 				caller.interface.internal.pipe(connection.interface.internal, {end:false});
 			}
 
-			caller.interface.internal.write(`\r\n\ntransmission over. confirming ${connections.length} peer${connections.length===1?'':'s'}.\r\n`);
+			caller.interface.internal.write('\r\n\n'+getText(language, 'transmission over', [
+				connections.length,
+				connections.length===1?
+				getText(language, 'peer'):
+				getText(language, 'peers'),
+			])+'\r\n');
 
 			logger.log("message ended");
 			// logger.log(connections);
@@ -207,7 +225,7 @@ async function call(caller:Caller, numbers:number[]){
 			await Promise.all(promises);
 
 			logger.log("confirmed all peers");
-			caller.interface.internal.write('confirmation finished\r\n\r\n');
+			caller.interface.internal.write(getText(language, "confirmation finished")+'\r\n\r\n');
 
 			caller.interface.removeListener('end', handleAbort); // don't handle aborts if not aborted
 

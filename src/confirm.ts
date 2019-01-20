@@ -13,7 +13,7 @@ return new Promise((resolve, reject)=>{
 
 	function end(success:boolean, message?:string){
 		// loggingStream.end();
-		logger.log(inspect`${success?'confirmed':'failed to confirm'} ${index==null?'caller':'client '+index}`);
+		logger.log(inspect`confirmation for ${index==null?'caller':'client '+index} ${success?'succeeded':'failed'}`);
 
 		socket.removeAllListeners('close');
 		socket.removeAllListeners('data');

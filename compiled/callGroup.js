@@ -123,8 +123,10 @@ function callOne(number, index, numbers) {
                 if (err.code === "ERR_STREAM_WRITE_AFTER_END")
                     return;
                 socket.end();
-                logging_1.logger.log(logging_1.inspect `socket error: ${err}`);
-                reject(explainErrorCode(err.code));
+                const explainedError = explainErrorCode(err.code);
+                const expectedError = explainedError === 'nc';
+                logging_1.logger.log(logging_1.inspect `client socket for ${peer.number} had an ${expectedError ? 'expected' : 'unexpected'} error${expectedError ? '' : ': '}${expectedError ? '' : err}`);
+                reject(explainedError);
             });
             socket.on('close', () => {
                 interFace.end();

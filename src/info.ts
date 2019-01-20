@@ -1,3 +1,5 @@
+import { getText } from "./texts";
+
 const infoEN = 
 `No english info yet`
 .replace(/\r/g, '').replace(/\n/g, '\r\n');
@@ -28,13 +30,22 @@ programmiert von: paul roemer
 github: github.com/soruh/i-telex-rundschreibsystem
 
 kontakt:
-   email: mail(at)soruh.de
-   telex: 41235
+	email: mail(at)soruh.de
+	telex: 41235
 `
 .replace(/\r/g, '').replace(/\n/g, '\r\n');
 
 // const info = `DE:\r\n${infoDE}\r\n\nEN:\r\n${infoEN}`;
 
-const info = infoDE;
+type language = "german"|"english";
 
-export default info;
+function getInfo(language:language):string{
+	switch(language){
+		case "german":
+			return infoDE;
+		default:
+			return getText(language, 'no info')+': '+language;
+	}
+}
+
+export default getInfo;
