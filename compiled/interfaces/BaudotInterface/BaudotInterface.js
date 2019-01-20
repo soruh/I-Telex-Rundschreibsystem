@@ -331,30 +331,44 @@ class BaudotInterface extends Interface_1.default {
                 this.debug(logging_1.inspect `unknown package type: ${type} data: ${data}`);
         }
     }
+    actuallyEnd(endTimeout) {
+        this.debug(logging_1.inspect `ending baudotinterface`);
+        this.ended = true;
+        clearTimeout(endTimeout);
+        clearTimeout(this.baudotTimeout);
+        clearInterval(this.pulse);
+        this.destroy();
+        this.printDebugString();
+        this.emit("end");
+    }
     end(force = false) {
-        this.debug(logging_1.inspect `end`);
         if (this.ended) {
             this.debug(logging_1.inspect `already ended`);
             return;
         }
-        if (force || this.isDrained()) {
-            this.ended = true;
-            this.debug(logging_1.inspect `ending baudotinterface ${this.isDrained() ? 'after drain' : 'by force'}`);
+        this.debug(logging_1.inspect `end`);
+        try {
+            this.sendEnd();
+        }
+        catch (err) {
             try {
-                this.sendEnd();
+                // close the connection if sending the
+                // end package fails
+                this.actuallyEnd();
             }
-            catch (err) {
-                //
-            }
-            clearInterval(this.pulse);
-            clearTimeout(this.baudotTimeout);
-            this.destroy();
-            this.printDebugString();
-            this.emit("end");
+            catch (err) { /**/ }
+            return;
+        }
+        let endTimeout;
+        if (this.isDrained()) {
+            this.actuallyEnd(endTimeout);
         }
         else {
             this.debug(logging_1.inspect `not ending baudotinterface, because it is not drained yet.`);
-            this.once('drain', this.end);
+            this.once('drain', () => {
+                this.actuallyEnd(endTimeout);
+            });
+            endTimeout = setTimeout(this.actuallyEnd, 10 * 1000);
         }
     }
 }

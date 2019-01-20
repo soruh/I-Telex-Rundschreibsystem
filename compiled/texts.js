@@ -5,7 +5,7 @@ const logging_1 = require("./util/logging");
 const texts = {
     "german": {
         "welcome": ["sie haben den rundsendedienst unter '", "' erreicht"],
-        "introduction": "bitte kommandos, gefolgt von einem parameter, wenn benoetigt, eingeben.\r\n(LF) zum bestaetigen, h fuer hilfe",
+        "introduction": "bitte kommandos eingeben und mit (LF) bestaetigen. h fuer hilfe",
         "modeChange": "neuer modus",
         "help": "hilfe fuer modus",
         "help explaination": "(komando) (parametertyp): (funktion)",
