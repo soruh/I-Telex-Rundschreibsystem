@@ -34,7 +34,7 @@ const texts: {
 		"calling": ["rufe ", " ", " an:"],
 
 		"transmission over": ["uebertragung beendet. bestaetige ", " "],
-		"confirmation finished": "bestaetige beendet",
+		"confirmation finished": "bestaetigung beendet",
 
 		"peer":  "teilnehmer",
 		"peers": "teilnehmer",

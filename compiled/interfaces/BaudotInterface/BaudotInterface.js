@@ -368,7 +368,9 @@ class BaudotInterface extends Interface_1.default {
             this.once('drain', () => {
                 this.actuallyEnd(endTimeout);
             });
-            endTimeout = setTimeout(this.actuallyEnd, 10 * 1000);
+            endTimeout = setTimeout(() => {
+                this.actuallyEnd();
+            }, 10 * 1000);
         }
     }
 }

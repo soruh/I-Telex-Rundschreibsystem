@@ -23,7 +23,7 @@ const texts = {
         "now connected": ["verbindung mit ", " ", " aufgebaut. verbindungsabbau mit '+++'"],
         "calling": ["rufe ", " ", " an:"],
         "transmission over": ["uebertragung beendet. bestaetige ", " "],
-        "confirmation finished": "bestaetige beendet",
+        "confirmation finished": "bestaetigung beendet",
         "peer": "teilnehmer",
         "peers": "teilnehmer",
         "help_b_b": "zurueck zum hauptmenue",

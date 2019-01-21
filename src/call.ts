@@ -108,7 +108,7 @@ async function call(language:language, caller:Caller, numbers:number[]){
 		logFile.write(JSON.stringify({
 			caller: caller.identifier,
 			// timestamp: new Date(),
-			called: connections.map(x=>[x.number, x.identifier]),
+			called: connections.map(x=>[x.number, x.identifier, x.name]),
 		})+'\n');
 
 		caller.interface.internal.pipe(logFile);
