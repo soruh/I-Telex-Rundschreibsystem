@@ -282,7 +282,6 @@ async function call(language:language, caller:Caller, numbers:number[]){
 		}catch(err){/**/}
 	}
 	
-	caller.interface.internal.write('\r\n');
 	confimedCaller = true;
 	resolveCallerConfirmation();
 }

@@ -220,7 +220,6 @@ async function call(language, caller, numbers) {
         }
         catch (err) { /**/ }
     }
-    caller.interface.internal.write('\r\n');
     confimedCaller = true;
     resolveCallerConfirmation();
 }
