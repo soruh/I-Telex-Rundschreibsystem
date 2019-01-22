@@ -110,6 +110,9 @@ function callOne(number, index, numbers) {
                         interFace.end();
                         reject('timeout');
                     }
+                    else {
+                        reject(err.message || err || 'unknown error');
+                    }
                 }
             });
             interFace.on('reject', reason => {

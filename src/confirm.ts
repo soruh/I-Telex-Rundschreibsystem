@@ -15,7 +15,7 @@ return new Promise((resolve, reject)=>{
 		// loggingStream.end();
 		logger.log(inspect`confirmation for ${index==null?'caller':'client '+index} ${success?'succeeded':'failed'}`);
 
-		socket.removeAllListeners('close');
+		socket.removeAllListeners('end');
 		socket.removeAllListeners('data');
 
 		try{
@@ -60,8 +60,8 @@ return new Promise((resolve, reject)=>{
 	});
 
 
-	socket.once('close', ()=>{
-		// logger.log("socket closed");
+	socket.once('end', ()=>{
+		// logger.log("socket ended");
 		end(false, 'sbk');
 	});
 

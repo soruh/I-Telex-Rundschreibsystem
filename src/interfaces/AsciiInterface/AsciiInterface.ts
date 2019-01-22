@@ -6,6 +6,11 @@ class AsciiInterface extends Interface {
 	public extractor:ExtractAsciiExtension;
 	constructor(caller:boolean){
 		super();
+
+		this._external.once('close', ()=>{
+			this.end();
+		});
+		
 		if(caller){
 			this.extractor = new ExtractAsciiExtension();
 			this.extractor.on('extension', ext=>{

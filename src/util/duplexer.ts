@@ -77,6 +77,7 @@ function duplex(writer:Writable, reader:Readable):Duplex{
 		if (ended) {
 			return;
 		}
+
 		ended = true;
 		let args = slice.call(arguments);
 		args.unshift("end");

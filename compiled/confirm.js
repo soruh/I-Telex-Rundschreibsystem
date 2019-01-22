@@ -12,7 +12,7 @@ function confirm(socket, index) {
         function end(success, message) {
             // loggingStream.end();
             logging_1.logger.log(logging_1.inspect `confirmation for ${index == null ? 'caller' : 'client ' + index} ${success ? 'succeeded' : 'failed'}`);
-            socket.removeAllListeners('close');
+            socket.removeAllListeners('end');
             socket.removeAllListeners('data');
             try {
                 socket.write('\r\n');
@@ -44,8 +44,8 @@ function confirm(socket, index) {
                 end(true);
             }, 7500);
         });
-        socket.once('close', () => {
-            // logger.log("socket closed");
+        socket.once('end', () => {
+            // logger.log("socket ended");
             end(false, 'sbk');
         });
         let timeoutCheckInterval = setInterval(() => {

@@ -139,6 +139,8 @@ function callOne(number:number, index:number, numbers:number[]){
 					if(err.message === 'timeout'){
 						interFace.end();
 						reject('timeout');
+					}else{
+						reject(err.message||err||'unknown error');
 					}
 				}
 			});

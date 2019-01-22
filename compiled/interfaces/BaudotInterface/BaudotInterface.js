@@ -99,6 +99,8 @@ class BaudotInterface extends Interface_1.default {
         this._external.on('end', () => {
             this.debug("outside ended");
             this.end(); // disallow reconnection
+            this.emit('end');
+            this.destroy();
         });
         this._external.on("close", () => logger.log("_outside closed"));
         this._internal.on("close", () => logger.log("_inside closed"));
@@ -119,6 +121,8 @@ class BaudotInterface extends Interface_1.default {
         }
     }
     printDebugString() {
+        if (!this.logDebug)
+            return;
         function getColor(value, colors) {
             let color;
             if (colors[2]) {

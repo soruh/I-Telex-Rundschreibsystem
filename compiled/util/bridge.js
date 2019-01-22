@@ -15,15 +15,20 @@ class Bridge {
         this.B = duplexer_1.default(B_WRITE, B_READ);
         this.A.on('error', err => this.handleError(err, 'A'));
         this.B.on('error', err => this.handleError(err, 'B'));
+        this.A.once('end', () => this.handleEnd('A'));
+        this.B.once('end', () => this.handleEnd('B'));
     }
     handleError(err, stream) {
-        switch (err.code) {
+        switch ((err).code) {
             case "ERR_STREAM_WRITE_AFTER_END":
             case "ERR_STREAM_DESTROYED":
                 return;
             default:
                 logging_1.logger.log('Bridge stream ' + stream + ' error:', err);
         }
+    }
+    handleEnd(stream) {
+        logging_1.logger.log('Bridge stream ' + stream + ' ended');
     }
 }
 exports.default = Bridge;

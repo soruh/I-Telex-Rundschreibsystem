@@ -5,6 +5,9 @@ const ExtractAsciiExtension_1 = require("./ExtractAsciiExtension");
 class AsciiInterface extends Interface_1.default {
     constructor(caller) {
         super();
+        this._external.once('close', () => {
+            this.end();
+        });
         if (caller) {
             this.extractor = new ExtractAsciiExtension_1.default();
             this.extractor.on('extension', ext => {
