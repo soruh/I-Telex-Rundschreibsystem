@@ -247,6 +247,7 @@ function printHelp(language:language, mode:string){
 
 async function handleCommand(input:string, mode:string, callList:number[], language:language):Promise<commandResult>{
 	if(input === '') return {};
+	if(input[input.length-1] === '-') return {};
 
 	const identifier = input[0];
 	const answer = input.slice(1);
@@ -294,7 +295,7 @@ function ui(readline:ReadLine&{output: Writable}):Promise<{
 		function promptCommand(){
 			readline.question('- ', async answer=>{
 				readline.output.write('\r');
-				
+
 				const result = await handleCommand(answer, mode, callList, language);
 
 				if(result.newLanguage){

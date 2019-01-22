@@ -210,6 +210,8 @@ function printHelp(language, mode) {
 async function handleCommand(input, mode, callList, language) {
     if (input === '')
         return {};
+    if (input[input.length - 1] === '-')
+        return {};
     const identifier = input[0];
     const answer = input.slice(1);
     let number = parseInt(answer);

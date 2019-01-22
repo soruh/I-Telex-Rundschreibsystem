@@ -81,6 +81,7 @@ async function call(language, caller, numbers) {
         const logFile = createLogStream();
         logFile.write(JSON.stringify({
             caller: caller.identifier,
+            callerIP: caller.socket.remoteAddress,
             // timestamp: new Date(),
             called: connections.map(x => [x.number, x.identifier, x.name]),
         }) + '\n');
