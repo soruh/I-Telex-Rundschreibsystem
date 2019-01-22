@@ -121,7 +121,7 @@ function getText(language:language, text:string, args?:any[]):string{
 			let string = "";
 			for(let i in value){
 				string += value[i];
-				if(args[i] === undefined) string += args[i];
+				if(args[i] !== undefined) string += args[i];
 			}
 			return string;
 		}

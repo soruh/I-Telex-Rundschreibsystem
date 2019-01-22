@@ -94,7 +94,7 @@ function getText(language, text, args) {
             let string = "";
             for (let i in value) {
                 string += value[i];
-                if (args[i] === undefined)
+                if (args[i] !== undefined)
                     string += args[i];
             }
             return string;
