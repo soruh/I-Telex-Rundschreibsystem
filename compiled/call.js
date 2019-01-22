@@ -40,6 +40,10 @@ function createLogStream(failed = false) {
         }
     }
 }
+function printDate() {
+    let date = new Date();
+    return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}`;
+}
 async function call(language, caller, numbers) {
     let confimedCaller = false;
     let resolveCallerConfirmation = () => { };
@@ -68,7 +72,7 @@ async function call(language, caller, numbers) {
         });
         logging_1.logger.log('recieved caller confirmation');
         if (connections.length === 0) {
-            caller.interface.internal.write(texts_1.getText(language, 'none reachable') + '\r\n');
+            caller.interface.internal.write(texts_1.getText(language, 'none reachable', [texts_1.getText(language, 'peers')]) + '\r\n');
             caller.interface.once('end', () => caller.socket.end());
             caller.interface.end(); // end the interface
             return;
@@ -101,8 +105,11 @@ async function call(language, caller, numbers) {
                 logging_1.logger.log('called close');
             });
             connection.interface.internal.write('\r\n');
+            connection.interface.internal.write(printDate());
+            connection.interface.internal.write('\r\n');
             connection.interface.internal.write(config_1.IDENTIFIER);
-            connection.interface.internal.write('\r\nRundsenden');
+            connection.interface.internal.write('\r\n');
+            connection.interface.internal.write('Rundsenden');
             if (caller.identifier)
                 connection.interface.internal.write(' von ' + caller.identifier.replace(/[\r\n]/g, ''));
             connection.interface.internal.write('\r\n');
@@ -113,7 +120,7 @@ async function call(language, caller, numbers) {
         detector.emitter.on('end', async () => {
             caller.interface.internal.unpipe(detector);
             for (let connection of connections) {
-                caller.interface.internal.pipe(connection.interface.internal, { end: false });
+                caller.interface.internal.unpipe(connection.interface.internal);
             }
             caller.interface.internal.write('\r\n\n' + texts_1.getText(language, 'transmission over', [
                 connections.length,
@@ -123,6 +130,7 @@ async function call(language, caller, numbers) {
             ]) + '\r\n');
             logging_1.logger.log("message ended");
             // logger.log(connections);
+            caller.interface.internal.unpipe(logFile);
             logFile.end();
             let promises = [];
             for (let index in connections) {
@@ -148,7 +156,7 @@ async function call(language, caller, numbers) {
                     async function confirmClient() {
                         function close() {
                             try {
-                                connection.interface.internal.write('\r\n' + config_1.IDENTIFIER + '\r\n\n');
+                                connection.interface.internal.write(config_1.IDENTIFIER + '\r\n\n');
                             }
                             catch (err) { /**/ }
                             connection.interface.once('end', () => { connection.socket.end(); });
@@ -200,14 +208,7 @@ async function call(language, caller, numbers) {
             statusBuffer.push([false, number, err]);
         }
     });
-    logging_1.logger.log('confirming caller');
-    try {
-        caller.interface.internal.resume();
-        caller.identifier = await confirm_1.default(caller.interface.internal);
-    }
-    catch (err) {
-        logging_1.logger.log(logging_1.inspect `confimation failed: ${err}`);
-    }
+    caller.interface.internal.resume();
     while (statusBuffer.length > 0) {
         try {
             let [success, number, res] = statusBuffer.shift();

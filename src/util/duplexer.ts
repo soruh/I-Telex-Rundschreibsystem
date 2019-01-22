@@ -64,7 +64,6 @@ function duplex(writer:Writable, reader:Readable):Duplex{
 	}
 
 	function proxyStream(methodName) {
-		// tslint:disable-next-line:no-shadowed-variable
 		function reemit() {
 			let args = slice.call(arguments);
 			args.unshift(methodName);

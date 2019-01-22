@@ -19,7 +19,7 @@ return new Promise((resolve, reject)=>{
 		socket.removeAllListeners('data');
 
 		try{
-			socket.write('\r\n\n');
+			socket.write('\r\n');
 		}catch(err){/**/}
 
 		clearInterval(timeoutCheckInterval);

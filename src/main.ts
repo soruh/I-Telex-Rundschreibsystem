@@ -12,6 +12,10 @@ import { PORT, IDENTIFIER } from "./config";
 import { baudotModeUnknown } from "./util/baudot";
 import { Writable, Transform } from "stream";
 import { getText } from "./texts";
+import confirm from "./confirm";
+import { appendFileSync } from "fs";
+import { join } from "path";
+
 
 declare global {
 	interface Buffer {
@@ -74,11 +78,7 @@ server.on('connection', socket=>{
 	
 
 		async function handleClient(){
-			interFace.internal.write('\r\n\n');
-			interFace.internal.write(getText('german', 'welcome', [IDENTIFIER])+'\r\n\n');
-
 			interFace.internal.resume();
-
 			if(interFace instanceof BaudotInterface){
 				if(!interFace.drained){
 					// logger.log('waiting for drain');
@@ -96,6 +96,27 @@ server.on('connection', socket=>{
 				// }
 			}
 
+			// interFace.internal.write('\r\n');
+
+			// logger.log('confirming caller');
+			let callerIdentifier = "";
+			try{
+				// interFace.internal.resume();
+				callerIdentifier = await confirm(interFace.internal);
+
+				logger.log(inspect`caller: ${require('util').inspect(callerIdentifier).slice(1, -1)}`);
+				appendFileSync(join(__dirname, '../caller_log.txt'), JSON.stringify({
+					time: new Date(),
+					caller: callerIdentifier,
+				})+'\n');
+			}catch(err){
+				logger.log(inspect`caller confimation failed: ${err}`);
+			}
+
+			interFace.internal.write(IDENTIFIER);
+			interFace.internal.write('\r\n\n');
+			// interFace.internal.write(getText('german', 'welcome', [IDENTIFIER])+'\r\n\n');
+
 			const removedCr = new RemoveCr();
 			interFace.internal.pipe(removedCr);
 
@@ -104,7 +125,13 @@ server.on('connection', socket=>{
 				output: interFace.internal,
 			});
 			
-			const result = await ui(rl as readline.ReadLine&{output:Writable});
+			try{
+				var result = await ui(rl as readline.ReadLine&{output:Writable});
+			}catch(err){
+				logger.log(inspect`ui failed: ${err}`);
+				socket.end();
+				return;
+			}
 			
 			interFace.internal.unpipe(removedCr);
 
@@ -113,6 +140,7 @@ server.on('connection', socket=>{
 					await call(result.language ,{
 						interface:interFace,
 						socket,
+						identifier: callerIdentifier,
 					}, result.callList);
 
 					break;

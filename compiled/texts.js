@@ -4,11 +4,11 @@ const logging_1 = require("./util/logging");
 // tslint:disable:object-literal-key-quotes
 const texts = {
     "german": {
-        "welcome": ["sie haben den rundsendedienst unter '", "' erreicht"],
-        "introduction": "bitte kommandos eingeben und mit (LF) bestaetigen. h fuer hilfe",
+        // "welcome": ["sie haben den rundsendedienst unter '", "' erreicht"], // not used
+        "introduction": "h fuer hilfe. kommandos mit (zv) bestaetigen",
         "modeChange": "neuer modus",
         "help": "hilfe fuer modus",
-        "help explaination": "(komando) (parametertyp): (funktion)",
+        "help explaination": "(komando)(parametertyp): (funktion)",
         "blacklisted": ["", " steht ", " auf der blacklist"],
         "not": "nicht",
         "blacklist anounce call": "wird in 30sek angerufen, um ihren blacklist status zu aendern",
@@ -18,8 +18,8 @@ const texts = {
         "valid languages": "gueltige sprachen sind",
         "invalid mode": "ungueltiger modus",
         "no argument": "kein parameter angegeben",
-        "no number": "keine number angegeben",
-        "none reachable": "Es konnten keine teilnehmer erreicht werden",
+        "no number": "keine nummer angegeben",
+        "none reachable": ["Es konnten keine ", " erreicht werden"],
         "now connected": ["verbindung mit ", " ", " aufgebaut. verbindungsabbau mit '+++'"],
         "calling": ["rufe ", " ", " an:"],
         "transmission over": ["uebertragung beendet. bestaetige ", " "],
@@ -43,11 +43,11 @@ const texts = {
         "unknown error": "unbekannter fehler",
     },
     "english": {
-        "welcome": ["you have reaced the broadcasting service under '", "'"],
+        // "welcome": ["you have reaced the broadcasting service under '", "'"], // not used
         "introduction": "Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help",
         "modeChange": "new mode",
         "help": "help for mode",
-        "help explaination": "(command) (type of argument): (function)",
+        "help explaination": "(command)(type of argument): (function)",
         "blacklisted": ["", " is ", " blacklisted"],
         "not": "not",
         "blacklist anounce call": "will be called in 30sec to change their blacklist status",
@@ -58,7 +58,7 @@ const texts = {
         "invalid mode": "invalid mode",
         "no argument": "no argument specified",
         "no number": "no number specified",
-        "none reachable": "No peers could be reached",
+        "none reachable": ["No ", " could be reached"],
         "now connected": ["Now connected to ", " ", ". Type '+++' to end message"],
         "calling": ["calling ", " ", ":"],
         "transmission over": ["transmission over. confirming ", " "],

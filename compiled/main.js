@@ -10,7 +10,9 @@ const call_1 = require("./call");
 const config_1 = require("./config");
 const baudot_1 = require("./util/baudot");
 const stream_1 = require("stream");
-const texts_1 = require("./texts");
+const confirm_1 = require("./confirm");
+const fs_1 = require("fs");
+const path_1 = require("path");
 Buffer.prototype.readNullTermString =
     function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
         let firstZero = this.indexOf(0, start);
@@ -51,8 +53,6 @@ server.on('connection', socket => {
             logging_1.logger.log(logging_1.inspect `calling client disconnected`);
         });
         async function handleClient() {
-            interFace.internal.write('\r\n\n');
-            interFace.internal.write(texts_1.getText('german', 'welcome', [config_1.IDENTIFIER]) + '\r\n\n');
             interFace.internal.resume();
             if (interFace instanceof BaudotInterface_1.default) {
                 if (!interFace.drained) {
@@ -68,19 +68,45 @@ server.on('connection', socket => {
                 // 	logger.log('was already drained');
                 // }
             }
+            // interFace.internal.write('\r\n');
+            // logger.log('confirming caller');
+            let callerIdentifier = "";
+            try {
+                // interFace.internal.resume();
+                callerIdentifier = await confirm_1.default(interFace.internal);
+                logging_1.logger.log(logging_1.inspect `caller: ${require('util').inspect(callerIdentifier).slice(1, -1)}`);
+                fs_1.appendFileSync(path_1.join(__dirname, '../caller_log.txt'), JSON.stringify({
+                    time: new Date(),
+                    caller: callerIdentifier,
+                }) + '\n');
+            }
+            catch (err) {
+                logging_1.logger.log(logging_1.inspect `caller confimation failed: ${err}`);
+            }
+            interFace.internal.write(config_1.IDENTIFIER);
+            interFace.internal.write('\r\n\n');
+            // interFace.internal.write(getText('german', 'welcome', [IDENTIFIER])+'\r\n\n');
             const removedCr = new RemoveCr();
             interFace.internal.pipe(removedCr);
             const rl = readline.createInterface({
                 input: removedCr,
                 output: interFace.internal,
             });
-            const result = await ui_1.default(rl);
+            try {
+                var result = await ui_1.default(rl);
+            }
+            catch (err) {
+                logging_1.logger.log(logging_1.inspect `ui failed: ${err}`);
+                socket.end();
+                return;
+            }
             interFace.internal.unpipe(removedCr);
             switch (result.nextAction) {
                 case 'call':
                     await call_1.default(result.language, {
                         interface: interFace,
                         socket,
+                        identifier: callerIdentifier,
                     }, result.callList);
                     break;
                 case 'end':

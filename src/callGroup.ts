@@ -117,7 +117,6 @@ function callOne(number:number, index:number, numbers:number[]){
 				try{
 					const result = await confirm(interFace.internal, +index);
 
-
 					// output.write(result+'\r\n');
 
 					// interFace.internal.unpipe(output);

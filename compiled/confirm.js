@@ -15,7 +15,7 @@ function confirm(socket, index) {
             socket.removeAllListeners('close');
             socket.removeAllListeners('data');
             try {
-                socket.write('\r\n\n');
+                socket.write('\r\n');
             }
             catch (err) { /**/ }
             clearInterval(timeoutCheckInterval);

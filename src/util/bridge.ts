@@ -18,15 +18,19 @@ class Bridge {
 		this.A = duplex(A_WRITE, A_READ);
 		this.B = duplex(B_WRITE, B_READ);
 
-		this.A.on('error', err=>{
-			if((err as Error&{code: string}).code === "ERR_STREAM_WRITE_AFTER_END") return;
-			logger.log('Bridge stream A error:', err);
-		});
 
-		this.B.on('error', err=>{
-			if((err as Error&{code: string}).code === "ERR_STREAM_WRITE_AFTER_END") return;
-			logger.log('Bridge stream B error:', err);
-		});
+		this.A.on('error', err=>this.handleError(err as any, 'A'));
+		this.B.on('error', err=>this.handleError(err as any, 'B'));
+	}
+
+	private handleError(err:Error&{code: string}, stream:'A'|'B'){
+		switch((err as Error&{code: string}).code){
+			case "ERR_STREAM_WRITE_AFTER_END":
+			case "ERR_STREAM_DESTROYED":
+				return;
+			default:
+				logger.log('Bridge stream '+stream+' error:', err);
+		}
 	}
 }
 
