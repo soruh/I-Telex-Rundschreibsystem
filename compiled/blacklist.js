@@ -31,6 +31,7 @@ function getBlacklist() {
         return [];
     }
 }
+exports.getBlacklist = getBlacklist;
 function changeBlacklist(callback) {
     if (blackListLocked) {
         setTimeout(changeBlacklist, 100, callback); // wait .1 seconds before trying again.

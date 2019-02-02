@@ -29,6 +29,7 @@ const texts = {
         "help_b_b": "zurueck zum hauptmenue",
         "help_b_?": "blacklist status einer nummer auslesen",
         "help_b_.": "blacklist status einer nummer aendern",
+        "help_b_l": "blacklist ausdrucken",
         "help_m_q": "verbindung abbauen",
         "help_m_i": "generelle informationen",
         "help_m_s": "teilnehmersuche",

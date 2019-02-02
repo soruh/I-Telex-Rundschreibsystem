@@ -186,5 +186,6 @@ export {
 	addToBlacklist,
 	removeFromBlacklist,
 	updateBlacklistForNumber,
+	getBlacklist
 };
 

@@ -40,7 +40,7 @@ const commands_main = {
         needsNumber: null,
         action: (language, number, callList) => {
             return {
-                response: printCallList(callList),
+                response: printList(callList),
             };
         },
     },
@@ -165,6 +165,15 @@ const commands_blacklist = {
             };
         },
     },
+    'l': {
+        help: true,
+        needsNumber: null,
+        action: (language, number) => {
+            return {
+                response: printBlacklist(),
+            };
+        },
+    },
     'b': {
         help: true,
         needsNumber: null,
@@ -178,7 +187,7 @@ const commands_blacklist = {
 let commands = {};
 commands.main = commands_main;
 commands.blacklist = commands_blacklist;
-function printCallList(callList) {
+function printList(callList) {
     let lines = [''];
     let index = 0;
     for (const i in callList) {
@@ -191,6 +200,10 @@ function printCallList(callList) {
             lines[index] += ', ';
     }
     return lines.join('\r\n');
+}
+function printBlacklist() {
+    let blacklist = blacklist_1.getBlacklist();
+    return printList(blacklist);
 }
 function printHelp(language, mode) {
     const commandsForMode = commands[mode];

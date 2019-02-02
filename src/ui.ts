@@ -1,5 +1,5 @@
 import { ReadLine } from "readline";
-import { isBlacklisted, updateBlacklistForNumber } from "./blacklist";
+import { isBlacklisted, updateBlacklistForNumber, getBlacklist } from "./blacklist";
 import { Peer_search } from "./util/ITelexServerCom";
 import { logger, inspect } from "./util/logging";
 import { Writable } from "stream";
@@ -68,7 +68,7 @@ const commands_main:CommandList = {
 		needsNumber: null,
 		action: (language, number, callList)=>{
 			return {
-				response: printCallList(callList),
+				response: printList(callList),
 			};
 		},
 	},
@@ -194,6 +194,15 @@ const commands_blacklist:CommandList = {
 			};
 		},
 	},
+	'l': {
+		help: true,
+		needsNumber:null,
+		action: (language, number)=>{
+			return {
+				response: printBlacklist(),
+			};
+		},
+	},
 	'b': {
 		help: true,
 		needsNumber: null,
@@ -211,7 +220,7 @@ commands.main = commands_main;
 commands.blacklist = commands_blacklist;
 
 
-function printCallList(callList:number[]){
+function printList(callList:number[]){
 	let lines = [''];
 	let index = 0;
 	for (const i in callList) {
@@ -225,6 +234,12 @@ function printCallList(callList:number[]){
 		if (+i !== callList.length-1) lines[index] += ', ';
 	}
 	return lines.join('\r\n');
+}
+
+function printBlacklist(){
+	let blacklist = getBlacklist();
+	
+	return printList(blacklist);
 }
 
 function printHelp(language:language, mode:string){
