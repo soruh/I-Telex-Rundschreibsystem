@@ -44,6 +44,11 @@ function printDate() {
     let date = new Date();
     return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}`;
 }
+function sleep(ms) {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms);
+    });
+}
 async function call(language, caller, numbers) {
     let confimedCaller = false;
     let resolveCallerConfirmation = () => { };
@@ -122,6 +127,7 @@ async function call(language, caller, numbers) {
             for (let connection of connections) {
                 caller.interface.internal.unpipe(connection.interface.internal);
             }
+            await sleep(3 * 1000);
             caller.interface.internal.write('\r\n\n' + texts_1.getText(language, 'transmission over', [
                 connections.length,
                 connections.length === 1 ?
