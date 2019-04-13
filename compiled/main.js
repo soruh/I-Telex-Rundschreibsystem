@@ -13,6 +13,8 @@ const stream_1 = require("stream");
 const confirm_1 = require("./confirm");
 const fs_1 = require("fs");
 const path_1 = require("path");
+const events_1 = require("events");
+events_1.EventEmitter.defaultMaxListeners = Infinity; // allow infinite event listeners on all streams
 Buffer.prototype.readNullTermString =
     function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
         let firstZero = this.indexOf(0, start);

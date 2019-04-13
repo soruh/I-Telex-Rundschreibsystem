@@ -15,6 +15,11 @@ import { getText } from "./texts";
 import confirm from "./confirm";
 import { appendFileSync } from "fs";
 import { join } from "path";
+import { EventEmitter } from "events";
+
+
+EventEmitter.defaultMaxListeners = Infinity; // allow infinite event listeners on all streams
+
 
 
 declare global {
@@ -22,65 +27,65 @@ declare global {
 		readNullTermString: (encoding?, start?, end?) => string;
 	}
 }
-Buffer.prototype.readNullTermString = 
-function readNullTermString(encoding: string = "utf8", start: number = 0, end: number = this.length):string {
-	let firstZero = this.indexOf(0, start);
-	let stop = firstZero >= start && firstZero <= end ? firstZero : end;
-	return this.toString(encoding, start, stop);
-};
+Buffer.prototype.readNullTermString =
+	function readNullTermString(encoding: string = "utf8", start: number = 0, end: number = this.length): string {
+		let firstZero = this.indexOf(0, start);
+		let stop = firstZero >= start && firstZero <= end ? firstZero : end;
+		return this.toString(encoding, start, stop);
+	};
 
 
 class RemoveCr extends Transform {
-	public _transform(chunk: any, encoding: string, callback: (error?: Error, data?: any) => void){
+	public _transform(chunk: any, encoding: string, callback: (error?: Error, data?: any) => void) {
 		callback(null, chunk.toString().replace(/\r/g, ''));
 	}
 }
 
 
 const server = new net.Server();
-server.on('connection', socket=>{
-	let interFace:Interface;
-	socket.on('error',err=>{
+server.on('connection', socket => {
+	let interFace: Interface;
+	socket.on('error', err => {
 		logger.log('error', err);
 		socket.end();
 	});
-	
-	socket.once('data', chunk=>{
-		if([0,1,2,3,4,6,7,8,9].indexOf(chunk[0]) === -1){
+
+	socket.once('data', chunk => {
+		if ([0, 1, 2, 3, 4, 6, 7, 8, 9].indexOf(chunk[0]) === -1) {
 			interFace = new AsciiInterface(false);
-		}else{
+		} else {
 			interFace = new BaudotInterface(logger, ["\x1b[35m", "caller", "\x1b[0m"]);
 		}
 
-		logger.log(inspect`${interFace instanceof BaudotInterface?'baudot':'ascii'} client calling`);
+		logger.log(inspect`${interFace instanceof BaudotInterface ? 'baudot' : 'ascii'} client calling`);
 
-		interFace.on('end',()=>{
+		interFace.on('end', () => {
 			socket.end();
 		});
-	
+
 		// interFace.on('timeout', (ext:number)=>{
-			
+
 		// });
-	
-		
+
+
 		// let logStreamIn = new logStream(inspect`calling client \x1b[033m in\x1b[0m`, interFace.internal);
 		// let logStreamOut = new logStream(inspect`calling client \x1b[034mout\x1b[0m`, interFace._internal);
-		
 
-		socket.on('close', ()=>{
+
+		socket.on('close', () => {
 			(interFace as BaudotInterface).end(true);
-			
+
 			// logStreamIn.end();
 			// logStreamOut.end();
 			logger.log(inspect`calling client disconnected`);
 		});
 
-	
 
-		async function handleClient(){
+
+		async function handleClient() {
 			interFace.internal.resume();
-			if(interFace instanceof BaudotInterface){
-				if(!interFace.drained){
+			if (interFace instanceof BaudotInterface) {
+				if (!interFace.drained) {
 					// logger.log('waiting for drain');
 					await new Promise((resolve, reject) => {
 						interFace.on('drain', resolve);
@@ -100,7 +105,7 @@ server.on('connection', socket=>{
 
 			// logger.log('confirming caller');
 			let callerIdentifier = "";
-			try{
+			try {
 				// interFace.internal.resume();
 				callerIdentifier = await confirm(interFace.internal);
 
@@ -108,8 +113,8 @@ server.on('connection', socket=>{
 				appendFileSync(join(__dirname, '../caller_log.txt'), JSON.stringify({
 					time: new Date(),
 					caller: callerIdentifier,
-				})+'\n');
-			}catch(err){
+				}) + '\n');
+			} catch (err) {
 				logger.log(inspect`caller confimation failed: ${err}`);
 			}
 
@@ -124,21 +129,21 @@ server.on('connection', socket=>{
 				input: removedCr,
 				output: interFace.internal,
 			});
-			
-			try{
-				var result = await ui(rl as readline.ReadLine&{output:Writable});
-			}catch(err){
+
+			try {
+				var result = await ui(rl as readline.ReadLine & { output: Writable });
+			} catch (err) {
 				logger.log(inspect`ui failed: ${err}`);
 				socket.end();
 				return;
 			}
-			
+
 			interFace.internal.unpipe(removedCr);
 
-			switch(result.nextAction){
+			switch (result.nextAction) {
 				case 'call':
-					await call(result.language ,{
-						interface:interFace,
+					await call(result.language, {
+						interface: interFace,
 						socket,
 						identifier: callerIdentifier,
 					}, result.callList);
@@ -147,29 +152,29 @@ server.on('connection', socket=>{
 				case 'end':
 				default:
 					rl.close();
-					
-					interFace.once('end', ()=>socket.end());
+
+					interFace.once('end', () => socket.end());
 					interFace.end();
 			}
 
 			logger.log(inspect`ui actions finished`);
 		}
-		
-		function connectSocket(relayChunk=true){
-			if(relayChunk) interFace.external.write(chunk);
-			
+
+		function connectSocket(relayChunk = true) {
+			if (relayChunk) interFace.external.write(chunk);
+
 			socket.pipe(interFace.external);
 			interFace.external.pipe(socket);
 		}
 
-		if(interFace instanceof BaudotInterface){
-			interFace.on('call', ext=>{ // for baudot interface
+		if (interFace instanceof BaudotInterface) {
+			interFace.on('call', ext => { // for baudot interface
 				handleClient();
 				logger.log(inspect`baudot client calling extension: ${ext}`);
 			});
 
 			connectSocket(true);
-		}else{
+		} else {
 			connectSocket(false);
 
 			handleClient();
@@ -177,7 +182,7 @@ server.on('connection', socket=>{
 		}
 	});
 });
-server.listen(PORT, ()=>{
+server.listen(PORT, () => {
 	logger.log(inspect`listening on port: ${PORT}`);
 });
 
