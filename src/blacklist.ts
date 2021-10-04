@@ -12,46 +12,46 @@ import Interface from "./interfaces/Interface";
 
 
 
-const blackListPath = join(__dirname,'../blacklist.json');
+const blackListPath = join(__dirname, '../blacklist.json');
 
 let blackListLocked = false;
 
-function getBlacklist():number[]{
-	try{
+function getBlacklist(): number[] {
+	try {
 		let file = readFileSync(blackListPath).toString();
 		let list = JSON.parse(file);
-		if(list instanceof Array) {
-			if(list.find(x=>typeof x !== "number")){
+		if (list instanceof Array) {
+			if (list.find(x => typeof x !== "number")) {
 				throw new Error('the blacklist must only contain numbers');
-			}else{
+			} else {
 				return list;
 			}
-		}else{
+		} else {
 			throw new Error('the blacklist must contain an Array');
 		}
-	}catch(err){
+	} catch (err) {
 		logger.log(inspect`error reading blacklist: ${err}`);
 		return [];
 	}
 }
 
-function changeBlacklist(callback:(blacklist:number[])=>number[]){
-	if(blackListLocked){
+function changeBlacklist(callback: (blacklist: number[]) => number[]) {
+	if (blackListLocked) {
 		setTimeout(changeBlacklist, 100, callback); // wait .1 seconds before trying again.
 		return;
 	}
-	
-	blackListLocked=true;
 
-	writeFile(blackListPath, JSON.stringify(callback(getBlacklist())), ()=>{
-		blackListLocked=false;
+	blackListLocked = true;
+
+	writeFile(blackListPath, JSON.stringify(callback(getBlacklist())), () => {
+		blackListLocked = false;
 		logger.log(inspect`wrote new blacklist`);
 	});
 }
 
-function addToBlacklist(number:number){
-	changeBlacklist(blacklist=>{
-		if(blacklist.indexOf(number) === -1){
+function addToBlacklist(number: number) {
+	changeBlacklist(blacklist => {
+		if (blacklist.indexOf(number) === -1) {
 			blacklist.push(number);
 		}
 
@@ -60,39 +60,39 @@ function addToBlacklist(number:number){
 }
 
 
-function removeFromBlacklist(number:number){
-	changeBlacklist(blacklist=>{
+function removeFromBlacklist(number: number) {
+	changeBlacklist(blacklist => {
 		let index = blacklist.indexOf(number);
-		if(index > -1){
+		if (index > -1) {
 			blacklist.splice(index, 1);
 		}
-		
+
 		return blacklist;
 	});
 }
 
-async function updateBlacklistForNumber(number:number){
-	let peer:PackageData_decoded_5;
-	try{
+async function updateBlacklistForNumber(number: number) {
+	let peer: PackageData_decoded_5;
+	try {
 		peer = await peerQuery(number);
-	}catch(err){
+	} catch (err) {
 		logger.log(`Error in peerQuery:\r\n${err}`);
-		throw(new Error('failed retrieve number from server.'));
+		throw (new Error('failed retrieve number from server.'));
 	}
 
-	if(!peer){
+	if (!peer) {
 		logger.log(`Peer not found.`);
 		throw new Error('Peer not found.');
 	}
 
-	setTimeout(()=>{
+	setTimeout(() => {
 		logger.log(inspect`calling ${number} to confirm their blacklisting`);
-		let interFace:Interface;
-		switch(peer.type){
-			case 1: 
-			case 2: 
+		let interFace: Interface;
+		switch (peer.type) {
+			case 1:
+			case 2:
 			case 5:
-				interFace = new BaudotInterface(logger, ["\x1b[90m", "blacklist" ,"\x1b[0m"]);
+				interFace = new BaudotInterface(logger, ["\x1b[90m", "blacklist", "\x1b[0m"]);
 				break;
 			case 3:
 			case 4:
@@ -104,38 +104,38 @@ async function updateBlacklistForNumber(number:number){
 		}
 
 		const rl = createInterface({
-			input:interFace.internal,
-			output:interFace.internal,
+			input: interFace.internal,
+			output: interFace.internal,
 		});
-	
+
 		let socket = new Socket();
-	
-		socket.on('error', err=>{
+
+		socket.on('error', err => {
 			socket.end();
 			logger.log(inspect`called client error: ${err}`);
 		});
 
-		socket.on('close', ()=>{
+		socket.on('close', () => {
 			rl.close();
 			logger.log(inspect`called client disconnected`);
 		});
 
-		socket.setTimeout(60*1000);
+		socket.setTimeout(60 * 1000);
 
-		socket.on('timeout', ()=>{
+		socket.on('timeout', () => {
 			socket.end();
 			logger.log(inspect`called client timed out`);
 		});
 
 
-		function close(){
-			interFace.once('end', ()=>socket.end());
+		function close() {
+			interFace.once('end', () => socket.end());
 			interFace.end();
 		}
 
-		function confirmBlacklisting(){
-			rl.question(`do you (${number}) want to be blacklisted?\r\n (j/y/n) `, answer=>{
-				switch(answer.toLowerCase()){
+		function confirmBlacklisting() {
+			rl.question(`do you (${number}) want to be blacklisted?\r\n (j/y/n) `, answer => {
+				switch (answer.toLowerCase()) {
 					case 'y':
 					case 'j':
 						addToBlacklist(number);
@@ -156,10 +156,10 @@ async function updateBlacklistForNumber(number:number){
 			});
 		}
 
-		socket.connect({host:peer.ipaddress||peer.hostname, port:+peer.port}, ()=>{
+		socket.connect({ host: peer.ipaddress || peer.hostname, port: +peer.port }, () => {
 			socket.pipe(interFace.external);
 			interFace.external.pipe(socket);
-			
+
 			interFace.call(peer.extension);
 
 			interFace.internal.write("Rundschreibsystem:\r\n");
@@ -168,17 +168,17 @@ async function updateBlacklistForNumber(number:number){
 			confirmBlacklisting();
 		});
 
-		let timeout = setTimeout(()=>{ // close connection after 5 minutes
+		let timeout = setTimeout(() => { // close connection after 5 minutes
 
-			interFace.once('end', ()=>socket.end());
-			
+			interFace.once('end', () => socket.end());
+
 			interFace.end(); // end the interface
 
-		}, 5*60*1000);
-	}, 30*1000);
+		}, 5 * 60 * 1000);
+	}, 30 * 1000);
 }
 
-function isBlacklisted(number:number):boolean{
+function isBlacklisted(number: number): boolean {
 	return getBlacklist().indexOf(number) > -1;
 }
 export {

@@ -1,11 +1,11 @@
 import { getText } from "./texts";
 
-const infoEN = 
-`No english info yet`
-.replace(/\r/g, '').replace(/\n/g, '\r\n');
+const infoEN =
+	`No english info yet`
+		.replace(/\r/g, '').replace(/\n/g, '\r\n');
 
 const infoDE =
-`--- kennungsgeberabfrage fehlercodes ---:
+	`--- kennungsgeberabfrage fehlercodes ---:
 sbk: die verbindung wurde waerend der abfrage getrennt
 nc : es konnte keine verbindung zum angerufenen hergestellt werden
 df : kein kennungsgeber / keine antwort
@@ -33,18 +33,18 @@ kontakt:
 	email: mail(at)soruh.de
 	telex: 41235
 `
-.replace(/\r/g, '').replace(/\n/g, '\r\n');
+		.replace(/\r/g, '').replace(/\n/g, '\r\n');
 
 // const info = `DE:\r\n${infoDE}\r\n\nEN:\r\n${infoEN}`;
 
-type language = "german"|"english";
+type language = "german" | "english";
 
-function getInfo(language:language):string{
-	switch(language){
+function getInfo(language: language): string {
+	switch (language) {
 		case "german":
 			return infoDE;
 		default:
-			return getText(language, 'no info')+': '+language;
+			return getText(language, 'no info') + ': ' + language;
 	}
 }
 

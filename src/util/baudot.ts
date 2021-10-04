@@ -8,8 +8,8 @@ const unknownBaudotChar = "#";
 const invalidAsciiChar = 4;
 
 
-const baudotBu = ["#","t","\r","o"," ","h","n","m","\n","l","r","g","i","p","c","v","e","z","d","b","s","y","f","x","a","w","j","\x0F","u","q","k","\x0E"];
-const baudotZi = ["#","5","\r","9"," ","#",",",".","\n",")","4","#","8","0",":","=","3","+","@","?","'","6","#","/","-","2","%","\x0F","7","1","(","\x0E"];
+const baudotBu = ["#", "t", "\r", "o", " ", "h", "n", "m", "\n", "l", "r", "g", "i", "p", "c", "v", "e", "z", "d", "b", "s", "y", "f", "x", "a", "w", "j", "\x0F", "u", "q", "k", "\x0E"];
+const baudotZi = ["#", "5", "\r", "9", " ", "#", ",", ".", "\n", ")", "4", "#", "8", "0", ":", "=", "3", "+", "@", "?", "'", "6", "#", "/", "-", "2", "%", "\x0F", "7", "1", "(", "\x0E"];
 
 const changeModeBu = 31;
 const changeModeZi = 27;
@@ -18,12 +18,12 @@ const baudotModeZi = Symbol("zi");
 const baudotModeBu = Symbol("bu");
 const baudotModeUnknown = Symbol("unknown");
 
-function baudotify(str: string, baudotMode:symbol=baudotModeUnknown):[number[], symbol]{
+function baudotify(str: string, baudotMode: symbol = baudotModeUnknown): [number[], symbol] {
 	// logger.log(inspect`${'>'.repeat(80)}\nbaudotifying ${util.inspect(str)} in mode ${baudotMode}`);
 
 	// logger.log("mode: "+baudotMode.toString());
 	// logger.log("baudotifying: "+util.inspect(str));
-	
+
 	let baudot = [];
 	for (let char of str.toLowerCase()) {
 		// logger.log("mode: "+baudotMode.toString());
@@ -33,13 +33,13 @@ function baudotify(str: string, baudotMode:symbol=baudotModeUnknown):[number[], 
 		// logger.log("char: "+util.inspect(char));
 		// logger.log("baudotCodeZi: "+baudotCodeZi);
 		// logger.log("baudotCodeBu: "+baudotCodeBu);
-		
-		if(baudotCodeZi>-1&&baudotCodeBu>-1){
-			if(baudotMode===baudotModeBu){
+
+		if (baudotCodeZi > -1 && baudotCodeBu > -1) {
+			if (baudotMode === baudotModeBu) {
 				baudot.push(baudotCodeBu);
 				continue;
 			}
-			if(baudotMode===baudotModeZi){
+			if (baudotMode === baudotModeZi) {
 				baudot.push(baudotCodeZi);
 				continue;
 			}
@@ -66,21 +66,21 @@ function baudotify(str: string, baudotMode:symbol=baudotModeUnknown):[number[], 
 			baudot.push(baudotCodeBu);
 			continue;
 		}
-		
+
 		baudot.push(invalidAsciiChar);
 	}
 	// logger.log("baudotified: ",baudot);
 	// logger.log("mode: "+baudotMode.toString());
-	
+
 	// logger.log(inspect`new mode ${baudotMode}\n${'<'.repeat(80)}`);
 	return [baudot, baudotMode];
 }
 
-function asciify(data:Buffer, baudotMode:symbol=baudotModeUnknown): [string, symbol] {
+function asciify(data: Buffer, baudotMode: symbol = baudotModeUnknown): [string, symbol] {
 	let ascii = "";
 	// logger.log("mode: "+baudotMode.toString());
 	// logger.log("asciifying: ", data);
-	
+
 	for (let char of Array.from(data)) {
 		if (char === changeModeZi) {
 			baudotMode = baudotModeZi;
@@ -90,13 +90,13 @@ function asciify(data:Buffer, baudotMode:symbol=baudotModeUnknown): [string, sym
 			baudotMode = baudotModeBu;
 			continue;
 		}
-		
+
 		if (baudotMode === baudotModeBu) {
-			ascii += baudotBu[char]||unknownBaudotChar;
+			ascii += baudotBu[char] || unknownBaudotChar;
 			continue;
 		}
 		if (baudotMode === baudotModeZi) {
-			ascii += baudotZi[char]||unknownBaudotChar;
+			ascii += baudotZi[char] || unknownBaudotChar;
 			continue;
 		}
 		ascii += unknownBaudotChar;

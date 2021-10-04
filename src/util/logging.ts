@@ -39,15 +39,15 @@ class logStream {
 	private stream;
 	private logger;
 	private name;
-	constructor(name:string, stream:Stream){
+	constructor(name: string, stream: Stream) {
 		this.stream = stream;
 		this.name = name;
-		this.logger = (text:Buffer)=>{
+		this.logger = (text: Buffer) => {
 			logger.log(inspect`${name}: ${util.inspect(text.toString())}`);
 		};
 		this.stream.on('data', this.logger);
 	}
-	public end(){
+	public end() {
 		logger.log(`stopped logging for ${this.name}`);
 		this.stream.removeListener('data', this.logger);
 	}

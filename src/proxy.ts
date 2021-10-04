@@ -9,19 +9,19 @@ declare global {
 		readNullTermString: (encoding?, start?, end?) => string;
 	}
 }
-Buffer.prototype.readNullTermString = 
-function readNullTermString(encoding: string = "utf8", start: number = 0, end: number = this.length):string {
-	let firstZero = this.indexOf(0, start);
-	let stop = firstZero >= start && firstZero <= end ? firstZero : end;
-	return this.toString(encoding, start, stop);
-};
+Buffer.prototype.readNullTermString =
+	function readNullTermString(encoding: string = "utf8", start: number = 0, end: number = this.length): string {
+		let firstZero = this.indexOf(0, start);
+		let stop = firstZero >= start && firstZero <= end ? firstZero : end;
+		return this.toString(encoding, start, stop);
+	};
 
 const logger = console;
 
-const server = new Server(connection=>{
+const server = new Server(connection => {
 
-	function handleDate(data:Buffer, name:string){
-		switch(data[0]){
+	function handleDate(data: Buffer, name: string) {
+		switch (data[0]) {
 			case 0:
 				logger.log(inspect`${name} Heartbeat`);
 				break;
@@ -51,7 +51,7 @@ const server = new Server(connection=>{
 		}
 	}
 
-	let socket = connect({host:'192.168.1.75', port:134});
+	let socket = connect({ host: '192.168.1.75', port: 134 });
 	socket.pipe(connection);
 	connection.pipe(socket);
 
@@ -63,11 +63,11 @@ const server = new Server(connection=>{
 
 	let baudotMode = baudotModeUnknown;
 
-	chunker_a.on('data', data=>{
+	chunker_a.on('data', data => {
 		handleDate(data, '\x1b[031mitelex');
 	});
 
-	chunker_b.on('data', data=>{
+	chunker_b.on('data', data => {
 		handleDate(data, '\x1b[034mclient');
 	});
 });

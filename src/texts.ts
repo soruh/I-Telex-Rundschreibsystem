@@ -1,14 +1,14 @@
 import { logger, inspect } from "./util/logging";
 
-type language = "german"|"english";
+type language = "german" | "english";
 
 // tslint:disable:object-literal-key-quotes
 const texts: {
-	[index: string]:{ // ([index: language])
-		[index: string]: string|string[];
+	[index: string]: { // ([index: language])
+		[index: string]: string | string[];
 	};
 } = {
-	"german":{
+	"german": {
 		// "welcome": ["sie haben den rundsendedienst unter '", "' erreicht"], // not used
 		"introduction": "h fuer hilfe. kommandos mit (zv) bestaetigen",
 
@@ -17,7 +17,7 @@ const texts: {
 		"help explaination": "(komando)(parametertyp): (funktion)",
 		"blacklisted": ["", " steht ", " auf der blacklist"],
 		"not": "nicht",
-		
+
 		"blacklist anounce call": "wird in 30sek angerufen, um ihren blacklist status zu aendern",
 		"no new entries": "keine neuen entraege gefunden",
 
@@ -36,7 +36,7 @@ const texts: {
 		"transmission over": ["uebertragung beendet. bestaetige ", " "],
 		"confirmation finished": "bestaetigung beendet",
 
-		"peer":  "teilnehmer",
+		"peer": "teilnehmer",
 		"peers": "teilnehmer",
 
 		"help_b_b": "zurueck zum hauptmenue",
@@ -59,7 +59,7 @@ const texts: {
 		"invalid command": "ungueltiges kommando",
 		"unknown error": "unbekannter fehler",
 	},
-	"english":{
+	"english": {
 		// "welcome": ["you have reaced the broadcasting service under '", "'"], // not used
 		"introduction": "Type commands followed by an argument if needed.\r\n(LF) to confirm, h for help",
 
@@ -111,18 +111,18 @@ const texts: {
 };
 
 // tslint:disable:unified-signatures
-function getText(language:language, text:string, args?:any[]):string{
-	if(texts.hasOwnProperty(language)&&texts[language].hasOwnProperty(text)){
+function getText(language: language, text: string, args?: any[]): string {
+	if (texts.hasOwnProperty(language) && texts[language].hasOwnProperty(text)) {
 		// logger.log(inspect`got text ${text} for language ${language}`);
 
 		let value = texts[language][text];
-		if(typeof value === "string"){
+		if (typeof value === "string") {
 			return value;
-		}else{
+		} else {
 			let string = "";
-			for(let i in value){
+			for (let i in value) {
 				string += value[i];
-				if(args[i] !== undefined) string += args[i];
+				if (args[i] !== undefined) string += args[i];
 			}
 			return string;
 		}
@@ -134,11 +134,11 @@ function getText(language:language, text:string, args?:any[]):string{
 }
 
 
-function isLanguage(language:string){
+function isLanguage(language: string) {
 	return texts.hasOwnProperty(language);
 }
 
-function getValidLanguages(){
+function getValidLanguages() {
 	return Object.keys(texts);
 }
 

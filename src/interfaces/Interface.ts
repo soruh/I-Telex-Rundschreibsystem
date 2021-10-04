@@ -2,12 +2,12 @@
 import { EventEmitter } from "events";
 import Bridge from "../util/bridge";
 
-class Interface extends EventEmitter{
+class Interface extends EventEmitter {
 	// public internal   = new PassThrough(); //Readable  from outside -> Writeable  from inside
 	// public internal  = new PassThrough(); //Writeable from outside -> Readable   from inside
 	// public externalReadStream  = new PassThrough(); //Readable  from outside -> Writeable  from inside
 	// public externalWriteStream = new PassThrough(); //Writeable from outside -> Readable   from inside
-	
+
 	public inputBridge = new Bridge();
 	public outputBridge = new Bridge();
 
@@ -17,10 +17,10 @@ class Interface extends EventEmitter{
 	public external = this.inputBridge.B;
 	public internal = this.outputBridge.B;
 
-	constructor(){
+	constructor() {
 		super();
 	}
-	public destroy(){
+	public destroy() {
 		this.external.unpipe();
 		this.internal.unpipe();
 
@@ -34,10 +34,10 @@ class Interface extends EventEmitter{
 		this._external.destroy();
 		this._internal.destroy();
 	}
-	public call(extension:string){
+	public call(extension: string) {
 		// overwrite in child class
 	}
-	public end(){
+	public end() {
 		// overwrite in child class
 	}
 }
