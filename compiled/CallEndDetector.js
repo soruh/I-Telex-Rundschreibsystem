@@ -3,8 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const stream_1 = require("stream");
 const events_1 = require("events");
 class CallEndDetector extends stream_1.Transform {
-    buffer = '';
-    emitter = new events_1.EventEmitter();
+    constructor() {
+        super(...arguments);
+        this.buffer = '';
+        this.emitter = new events_1.EventEmitter();
+    }
     _transform(chunk, encoding, callback) {
         let bufferedChunk = this.buffer + chunk.toString();
         this.buffer += chunk.toString();

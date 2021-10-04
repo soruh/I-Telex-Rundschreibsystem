@@ -18,7 +18,10 @@ logging_1.logger = { log: () => { } };
 let socket = new net_1.Socket();
 let baudotInterface = new BaudotInterface_1.default(logging_1.logger, ["\x1b[32m", "client", "\x1b[0m"]);
 class noAutoCr extends stream_1.Transform {
-    padding = 0;
+    constructor() {
+        super(...arguments);
+        this.padding = 0;
+    }
     _transform(chunk, encoding, callback) {
         let out = "";
         for (let char of chunk.toString()) {

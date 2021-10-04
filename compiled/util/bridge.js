@@ -4,8 +4,6 @@ const stream = require("stream");
 const duplexer_1 = require("./duplexer");
 const logging_1 = require("./logging");
 class Bridge {
-    A;
-    B;
     constructor() {
         const A_WRITE = new stream.PassThrough();
         const A_READ = new stream.PassThrough();

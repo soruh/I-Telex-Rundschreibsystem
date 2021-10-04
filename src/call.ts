@@ -78,6 +78,8 @@ async function call(language: language, caller: Caller, numbers: number[]) {
 			getText(language, 'peer') :
 			getText(language, 'peers'),
 	]) + '\r\n');
+
+
 	const status = callGroup(numbers, async (error, connections) => {
 		if (error) {
 			logger.log('error', error);
@@ -214,7 +216,7 @@ async function call(language: language, caller: Caller, numbers: number[]) {
 							function close() {
 								try {
 									connection.interface.internal.write(IDENTIFIER + '\r\n\n');
-								} catch (err) {/**/ }
+								} catch (err) { /**/ }
 
 
 								connection.interface.once('end', () => { connection.socket.end(); });

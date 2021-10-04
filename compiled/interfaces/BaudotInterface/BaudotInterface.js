@@ -31,34 +31,27 @@ function encodeExt(ext) {
     }
 }
 class BaudotInterface extends Interface_1.default {
-    version = 1;
-    pulseRate = 3.5 * 1000;
-    asciifier = new BaudotToAscii_1.default();
-    baudotifier = new AsciiToBaudot_1.default();
-    packager = new PackageBaudotData_1.default();
-    chunker = new ChunkPackages_1.default();
-    writeBuffer = Buffer.alloc(0);
-    wasDrained = true;
-    accepted = false;
-    initialized = false;
-    bytesAcknowleged = 0;
-    bytesSent = 0;
-    bytesRecieved = 0;
-    ended = false;
-    baudotTimeout = setTimeout(() => this.onTimeout(), 30 * 1000);
-    pulse = setInterval(() => this.sendHeatbeat(), this.pulseRate);
-    get bytesUnacknowleged() {
-        return this.bytesSent - this.bytesAcknowleged + (this.bytesSent < this.bytesAcknowleged ? 256 : 0);
-    }
-    get bytesSendable() {
-        let sendable = 254 - this.bytesUnacknowleged;
-        return sendable < 0 ? 0 : sendable;
-    }
-    name = '?';
-    logger = console;
-    logDebug = logDebugDefault;
     constructor(logger, name, logDebug) {
         super();
+        this.version = 1;
+        this.pulseRate = 3.5 * 1000;
+        this.asciifier = new BaudotToAscii_1.default();
+        this.baudotifier = new AsciiToBaudot_1.default();
+        this.packager = new PackageBaudotData_1.default();
+        this.chunker = new ChunkPackages_1.default();
+        this.writeBuffer = Buffer.alloc(0);
+        this.wasDrained = true;
+        this.accepted = false;
+        this.initialized = false;
+        this.bytesAcknowleged = 0;
+        this.bytesSent = 0;
+        this.bytesRecieved = 0;
+        this.ended = false;
+        this.baudotTimeout = setTimeout(() => this.onTimeout(), 30 * 1000);
+        this.pulse = setInterval(() => this.sendHeatbeat(), this.pulseRate);
+        this.name = '?';
+        this.logger = console;
+        this.logDebug = logDebugDefault;
         let fullName;
         if (name) {
             if (name instanceof Array) {
@@ -114,6 +107,13 @@ class BaudotInterface extends Interface_1.default {
         this.external.on("close", () => logger.log("outside closed"));
         this.internal.on("close", () => logger.log("inside closed"));
         this.printDebugString();
+    }
+    get bytesUnacknowleged() {
+        return this.bytesSent - this.bytesAcknowleged + (this.bytesSent < this.bytesAcknowleged ? 256 : 0);
+    }
+    get bytesSendable() {
+        let sendable = 254 - this.bytesUnacknowleged;
+        return sendable < 0 ? 0 : sendable;
     }
     debug(text, verbosity = 2) {
         if (verbosity <= this.logDebug) {

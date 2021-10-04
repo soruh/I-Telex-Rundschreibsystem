@@ -3,13 +3,11 @@
         "moduleResolution": "node",
         "module": "commonjs",
         "declaration": false,
-        "target": "esnext",
+        "target": "ES2020",
         "outDir": "compiled/",
         //"allowJs": true,
         // "resolveJsonModule": true,
         "alwaysStrict": true,
-        
-
         //"noUnusedLocals": true,
         //"noUnusedParameters": true
     },

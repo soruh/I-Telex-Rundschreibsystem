@@ -9,6 +9,8 @@ const logging_1 = require("./util/logging");
 const confirm_1 = require("./confirm");
 const blacklist_1 = require("./blacklist");
 const events_1 = require("events");
+const promiseTimeout_1 = require("./util/promiseTimeout");
+const config = require("./config");
 function explainErrorCode(code) {
     switch (code) {
         case 'EHOSTUNREACH':
@@ -153,7 +155,7 @@ function callGroup(group, callback) {
     const status = new events_1.EventEmitter();
     Promise.all(group.map(async (number, index) => {
         try {
-            const result = await callOne(number, index, group);
+            const result = await (0, promiseTimeout_1.withTimeout)(config.CONNECT_TIMEOUT * 1000, callOne(number, index, group));
             status.emit('success', number, result);
             return result;
         }

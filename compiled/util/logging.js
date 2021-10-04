@@ -38,9 +38,6 @@ function inspect(substrings, ...values) {
 }
 exports.inspect = inspect;
 class logStream {
-    stream;
-    logger;
-    name;
     constructor(name, stream) {
         this.stream = stream;
         this.name = name;
