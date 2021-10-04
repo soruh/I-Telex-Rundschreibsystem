@@ -69,7 +69,7 @@ const commands_main = {
         action: async (language, number, callList, answer) => {
             let entries = [];
             try {
-                entries = await ITelexServerCom_1.Peer_search(answer);
+                entries = await (0, ITelexServerCom_1.Peer_search)(answer);
             }
             catch (err) { /**/ }
             const maxLength = Math.max(...entries.map(x => x.number.toString().length));
@@ -78,7 +78,7 @@ const commands_main = {
                 var response = newEntries.map(x => `${x.number.toString().padStart(maxLength)}: ${x.name}`).join('\r\n');
             }
             else {
-                var response = texts_1.getText(language, 'no new entries');
+                var response = (0, texts_1.getText)(language, 'no new entries');
             }
             return {
                 response,
@@ -90,7 +90,7 @@ const commands_main = {
         needsNumber: null,
         action: language => {
             return {
-                response: info_1.default(language),
+                response: (0, info_1.default)(language),
             };
         },
     },
@@ -108,19 +108,19 @@ const commands_main = {
         help: true,
         needsNumber: false,
         action: (language, number, callList, answer) => {
-            if (texts_1.isLanguage(answer)) {
+            if ((0, texts_1.isLanguage)(answer)) {
                 return {
                     newLanguage: answer,
-                    response: texts_1.getText(answer, 'introduction'),
+                    response: (0, texts_1.getText)(answer, 'introduction'),
                 };
             }
             else {
                 return {
-                    response: texts_1.getText(language, 'not a language', [answer]) +
+                    response: (0, texts_1.getText)(language, 'not a language', [answer]) +
                         '\r\n' +
-                        texts_1.getText(language, 'valid languages') +
+                        (0, texts_1.getText)(language, 'valid languages') +
                         ': ' +
-                        texts_1.getValidLanguages().join(', '),
+                        (0, texts_1.getValidLanguages)().join(', '),
                 };
             }
         },
@@ -143,11 +143,11 @@ const commands_blacklist = {
             if (!number) {
                 throw new Error('not a Number');
             }
-            await blacklist_1.updateBlacklistForNumber(number);
+            await (0, blacklist_1.updateBlacklistForNumber)(number);
             return {
                 end: true,
                 nextAction: 'end',
-                response: `${number} ${texts_1.getText(language, 'blacklist anounce call')}`,
+                response: `${number} ${(0, texts_1.getText)(language, 'blacklist anounce call')}`,
             };
         },
     },
@@ -156,11 +156,11 @@ const commands_blacklist = {
         needsNumber: true,
         action: (language, number) => {
             return {
-                response: texts_1.getText(language, 'blacklisted', [
+                response: (0, texts_1.getText)(language, 'blacklisted', [
                     number,
-                    blacklist_1.isBlacklisted(number) ?
+                    (0, blacklist_1.isBlacklisted)(number) ?
                         '' :
-                        texts_1.getText(language, 'not'),
+                        (0, texts_1.getText)(language, 'not'),
                 ]),
             };
         },
@@ -202,20 +202,20 @@ function printList(callList) {
     return lines.join('\r\n');
 }
 function printBlacklist() {
-    let blacklist = blacklist_1.getBlacklist();
+    let blacklist = (0, blacklist_1.getBlacklist)();
     return printList(blacklist);
 }
 function printHelp(language, mode) {
     const commandsForMode = commands[mode];
     if (!commandsForMode)
         throw new Error("invalid mode");
-    let helpString = `${texts_1.getText(language, 'help')}: ${mode}\r\n\n`;
-    helpString += texts_1.getText(language, "help explaination") + '\r\n';
+    let helpString = `${(0, texts_1.getText)(language, 'help')}: ${mode}\r\n\n`;
+    helpString += (0, texts_1.getText)(language, "help explaination") + '\r\n';
     for (const key in commandsForMode) {
         const command = commandsForMode[key];
         if (command.help) {
             const argType = command.needsNumber === null ? ' ' : (command.needsNumber ? 'n' : 't');
-            helpString += `${key} (${argType}): ${texts_1.getText(language, `help_${mode[0]}_${key}`)}\r\n`;
+            helpString += `${key} (${argType}): ${(0, texts_1.getText)(language, `help_${mode[0]}_${key}`)}\r\n`;
         }
     }
     return helpString;
@@ -236,22 +236,22 @@ async function handleCommand(input, mode, callList, language) {
     if (commandsForMode.hasOwnProperty(identifier)) {
         try {
             if (commandsForMode[identifier].needsNumber === true && !number) {
-                throw new Error(texts_1.getText(language, 'no number'));
+                throw new Error((0, texts_1.getText)(language, 'no number'));
             }
             else if (commandsForMode[identifier].needsNumber === false && !answer) {
-                throw new Error(texts_1.getText(language, 'no argument'));
+                throw new Error((0, texts_1.getText)(language, 'no argument'));
             }
             return await commandsForMode[identifier].action(language, number, callList, answer);
         }
         catch (err) {
             return {
-                response: err.message || err || texts_1.getText(language, 'unknown error'),
+                response: err.message || err || (0, texts_1.getText)(language, 'unknown error'),
             };
         }
     }
     else {
         return {
-            response: texts_1.getText(language, 'invalid command'),
+            response: (0, texts_1.getText)(language, 'invalid command'),
         };
     }
 }
@@ -260,20 +260,20 @@ function ui(readline) {
         let mode = 'main';
         let callList = [];
         let language = "german";
-        readline.output.write(texts_1.getText(language, 'introduction') + '\r\n');
+        readline.output.write((0, texts_1.getText)(language, 'introduction') + '\r\n');
         function promptCommand() {
             readline.question('- ', async (answer) => {
                 readline.output.write('\r');
                 const result = await handleCommand(answer, mode, callList, language);
                 if (result.newLanguage) {
                     language = result.newLanguage;
-                    readline.output.write(texts_1.getText(language, 'changed language', [language]) + '\r\n');
+                    readline.output.write((0, texts_1.getText)(language, 'changed language', [language]) + '\r\n');
                 }
                 if (result.response)
                     readline.output.write(result.response + '\r\n');
                 if (result.newMode) {
                     mode = result.newMode;
-                    readline.output.write(`${texts_1.getText(language, "modeChange")}: ${mode}\r\n`);
+                    readline.output.write(`${(0, texts_1.getText)(language, "modeChange")}: ${mode}\r\n`);
                 }
                 if (result.end) {
                     readline.close();

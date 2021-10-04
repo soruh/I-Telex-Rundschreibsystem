@@ -6,12 +6,12 @@ function confirm(socket, index) {
         let timeout = setTimeout(() => {
             end(false, "df");
         }, 10000);
-        logging_1.logger.log(logging_1.inspect `confirming client ${index == null ? 'caller' : 'client ' + index}`);
+        logging_1.logger.log((0, logging_1.inspect) `confirming client ${index == null ? 'caller' : 'client ' + index}`);
         // let loggingStream = new logStream(inspect`called client ${index}`, socket);
         socket.write('@');
         function end(success, message) {
             // loggingStream.end();
-            logging_1.logger.log(logging_1.inspect `confirmation for ${index == null ? 'caller' : 'client ' + index} ${success ? 'succeeded' : 'failed'}`);
+            logging_1.logger.log((0, logging_1.inspect) `confirmation for ${index == null ? 'caller' : 'client ' + index} ${success ? 'succeeded' : 'failed'}`);
             socket.removeAllListeners('end');
             socket.removeAllListeners('data');
             try {

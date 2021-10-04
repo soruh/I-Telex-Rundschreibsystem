@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.logStream = exports.logger = exports.inspect = void 0;
 const colors_1 = require("./colors");
 const util = require("util");
 const disableColors = false;
@@ -37,6 +38,9 @@ function inspect(substrings, ...values) {
 }
 exports.inspect = inspect;
 class logStream {
+    stream;
+    logger;
+    name;
     constructor(name, stream) {
         this.stream = stream;
         this.name = name;

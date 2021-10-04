@@ -3,12 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const stream_1 = require("stream");
 const baudot_1 = require("../../util/baudot");
 class BaudotToAscii extends stream_1.Transform {
-    constructor() {
-        super(...arguments);
-        this.baudotMode = baudot_1.baudotModeUnknown;
-    }
+    baudotMode = baudot_1.baudotModeUnknown;
     _transform(chunk, encoding, callback) {
-        let [ascii, newBaudotMode] = baudot_1.asciify(chunk, this.baudotMode);
+        let [ascii, newBaudotMode] = (0, baudot_1.asciify)(chunk, this.baudotMode);
         this.setMode(newBaudotMode);
         // this.push(ascii);
         // callback();

@@ -1,6 +1,7 @@
 "use strict";
 // import * as util from "util";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.changeModeBu = exports.changeModeZi = exports.baudotModeUnknown = exports.baudotModeBu = exports.baudotModeZi = exports.asciify = exports.baudotify = void 0;
 const unknownBaudotChar = "#";
 const invalidAsciiChar = 4;
 const baudotBu = ["#", "t", "\r", "o", " ", "h", "n", "m", "\n", "l", "r", "g", "i", "p", "c", "v", "e", "z", "d", "b", "s", "y", "f", "x", "a", "w", "j", "\x0F", "u", "q", "k", "\x0E"];

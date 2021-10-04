@@ -4,3 +4,4 @@ config.json
 logs/
 blacklist.json
 caller_log.txt
+compiled/

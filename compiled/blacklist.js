@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getBlacklist = exports.updateBlacklistForNumber = exports.removeFromBlacklist = exports.addToBlacklist = exports.isBlacklisted = void 0;
 const path_1 = require("path");
 const fs_1 = require("fs");
 const logging_1 = require("./util/logging");
@@ -8,11 +9,11 @@ const BaudotInterface_1 = require("./interfaces/BaudotInterface/BaudotInterface"
 const AsciiInterface_1 = require("./interfaces/AsciiInterface/AsciiInterface");
 const readline_1 = require("readline");
 const net_1 = require("net");
-const blackListPath = path_1.join(__dirname, '../blacklist.json');
+const blackListPath = (0, path_1.join)(__dirname, '../blacklist.json');
 let blackListLocked = false;
 function getBlacklist() {
     try {
-        let file = fs_1.readFileSync(blackListPath).toString();
+        let file = (0, fs_1.readFileSync)(blackListPath).toString();
         let list = JSON.parse(file);
         if (list instanceof Array) {
             if (list.find(x => typeof x !== "number")) {
@@ -27,7 +28,7 @@ function getBlacklist() {
         }
     }
     catch (err) {
-        logging_1.logger.log(logging_1.inspect `error reading blacklist: ${err}`);
+        logging_1.logger.log((0, logging_1.inspect) `error reading blacklist: ${err}`);
         return [];
     }
 }
@@ -38,9 +39,9 @@ function changeBlacklist(callback) {
         return;
     }
     blackListLocked = true;
-    fs_1.writeFile(blackListPath, JSON.stringify(callback(getBlacklist())), () => {
+    (0, fs_1.writeFile)(blackListPath, JSON.stringify(callback(getBlacklist())), () => {
         blackListLocked = false;
-        logging_1.logger.log(logging_1.inspect `wrote new blacklist`);
+        logging_1.logger.log((0, logging_1.inspect) `wrote new blacklist`);
     });
 }
 function addToBlacklist(number) {
@@ -65,7 +66,7 @@ exports.removeFromBlacklist = removeFromBlacklist;
 async function updateBlacklistForNumber(number) {
     let peer;
     try {
-        peer = await ITelexServerCom_1.peerQuery(number);
+        peer = await (0, ITelexServerCom_1.peerQuery)(number);
     }
     catch (err) {
         logging_1.logger.log(`Error in peerQuery:\r\n${err}`);
@@ -76,7 +77,7 @@ async function updateBlacklistForNumber(number) {
         throw new Error('Peer not found.');
     }
     setTimeout(() => {
-        logging_1.logger.log(logging_1.inspect `calling ${number} to confirm their blacklisting`);
+        logging_1.logger.log((0, logging_1.inspect) `calling ${number} to confirm their blacklisting`);
         let interFace;
         switch (peer.type) {
             case 1:
@@ -92,23 +93,23 @@ async function updateBlacklistForNumber(number) {
             default:
                 return;
         }
-        const rl = readline_1.createInterface({
+        const rl = (0, readline_1.createInterface)({
             input: interFace.internal,
             output: interFace.internal,
         });
         let socket = new net_1.Socket();
         socket.on('error', err => {
             socket.end();
-            logging_1.logger.log(logging_1.inspect `called client error: ${err}`);
+            logging_1.logger.log((0, logging_1.inspect) `called client error: ${err}`);
         });
         socket.on('close', () => {
             rl.close();
-            logging_1.logger.log(logging_1.inspect `called client disconnected`);
+            logging_1.logger.log((0, logging_1.inspect) `called client disconnected`);
         });
         socket.setTimeout(60 * 1000);
         socket.on('timeout', () => {
             socket.end();
-            logging_1.logger.log(logging_1.inspect `called client timed out`);
+            logging_1.logger.log((0, logging_1.inspect) `called client timed out`);
         });
         function close() {
             interFace.once('end', () => socket.end());

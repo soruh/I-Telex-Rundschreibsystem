@@ -12,23 +12,23 @@ const texts_1 = require("./texts");
 function createLogStream(failed = false) {
     try {
         var logFileName = new Date().toISOString() + '.gz';
-        var path = path_1.join(__dirname, '..', 'logs', logFileName);
-        const fd = fs_1.openSync(path, 'w');
-        const writeStream = fs_1.createWriteStream(null, { fd });
-        logging_1.logger.log(logging_1.inspect `opened log file ${logFileName}`);
+        var path = (0, path_1.join)(__dirname, '..', 'logs', logFileName);
+        const fd = (0, fs_1.openSync)(path, 'w');
+        const writeStream = (0, fs_1.createWriteStream)(null, { fd });
+        logging_1.logger.log((0, logging_1.inspect) `opened log file ${logFileName}`);
         writeStream.on('close', () => {
-            logging_1.logger.log(logging_1.inspect `closed log file ${logFileName}`);
+            logging_1.logger.log((0, logging_1.inspect) `closed log file ${logFileName}`);
         });
-        var logFile = zlib_1.createGzip();
+        var logFile = (0, zlib_1.createGzip)();
         logFile.pipe(writeStream);
         return logFile;
     }
     catch (err) {
-        logging_1.logger.log(logging_1.inspect `failed to create log file ${logFileName}`);
+        logging_1.logger.log((0, logging_1.inspect) `failed to create log file ${logFileName}`);
         if (err.code === 'ENOENT') {
             if (!failed) {
-                fs_1.mkdirSync(path_1.dirname(path), { recursive: true });
-                logging_1.logger.log(logging_1.inspect `created directory ${path_1.dirname(path)}`);
+                (0, fs_1.mkdirSync)((0, path_1.dirname)(path), { recursive: true });
+                logging_1.logger.log((0, logging_1.inspect) `created directory ${(0, path_1.dirname)(path)}`);
                 return createLogStream(true);
             }
             else {
@@ -53,13 +53,13 @@ async function call(language, caller, numbers) {
     let confimedCaller = false;
     let resolveCallerConfirmation = () => { };
     caller.interface.internal.write('\r\n');
-    caller.interface.internal.write(texts_1.getText(language, 'calling', [
+    caller.interface.internal.write((0, texts_1.getText)(language, 'calling', [
         numbers.length,
         numbers.length === 1 ?
-            texts_1.getText(language, 'peer') :
-            texts_1.getText(language, 'peers'),
+            (0, texts_1.getText)(language, 'peer') :
+            (0, texts_1.getText)(language, 'peers'),
     ]) + '\r\n');
-    const status = callGroup_1.default(numbers, async (error, connections) => {
+    const status = (0, callGroup_1.default)(numbers, async (error, connections) => {
         if (error) {
             logging_1.logger.log('error', error);
             throw error;
@@ -77,7 +77,7 @@ async function call(language, caller, numbers) {
         });
         logging_1.logger.log('recieved caller confirmation');
         if (connections.length === 0) {
-            caller.interface.internal.write(texts_1.getText(language, 'none reachable', [texts_1.getText(language, 'peers')]) + '\r\n');
+            caller.interface.internal.write((0, texts_1.getText)(language, 'none reachable', [(0, texts_1.getText)(language, 'peers')]) + '\r\n');
             caller.interface.once('end', () => caller.socket.end());
             caller.interface.end(); // end the interface
             return;
@@ -96,11 +96,11 @@ async function call(language, caller, numbers) {
         }) + '\n');
         caller.interface.internal.pipe(logFile);
         caller.interface.once('end', handleAbort);
-        caller.interface.internal.write(texts_1.getText(language, 'now connected', [
+        caller.interface.internal.write((0, texts_1.getText)(language, 'now connected', [
             connections.length,
             connections.length === 1 ?
-                texts_1.getText(language, 'peer') :
-                texts_1.getText(language, 'peers'),
+                (0, texts_1.getText)(language, 'peer') :
+                (0, texts_1.getText)(language, 'peers'),
         ]) + '\r\n');
         for (let connection of connections) {
             connection.socket.on('end', () => {
@@ -128,11 +128,11 @@ async function call(language, caller, numbers) {
                 caller.interface.internal.unpipe(connection.interface.internal);
             }
             await sleep(3 * 1000);
-            caller.interface.internal.write('\r\n\n' + texts_1.getText(language, 'transmission over', [
+            caller.interface.internal.write('\r\n\n' + (0, texts_1.getText)(language, 'transmission over', [
                 connections.length,
                 connections.length === 1 ?
-                    texts_1.getText(language, 'peer') :
-                    texts_1.getText(language, 'peers'),
+                    (0, texts_1.getText)(language, 'peer') :
+                    (0, texts_1.getText)(language, 'peers'),
             ]) + '\r\n');
             logging_1.logger.log("message ended");
             // logger.log(connections);
@@ -144,7 +144,7 @@ async function call(language, caller, numbers) {
                 caller.interface.internal.unpipe(connection.interface.internal);
                 // connection.interface.internal.resume();
                 promises.push(new Promise((resolve, reject) => {
-                    logging_1.logger.log(logging_1.inspect `confirming: ${connection.number} (${connection.name})`);
+                    logging_1.logger.log((0, logging_1.inspect) `confirming: ${connection.number} (${connection.name})`);
                     // caller.interface.internal.write(`confirming: ${connection.number} (${connection.name})\r\n`);
                     // caller.interface.internal.write(`${DELIMITER}\r\n`);
                     if (connection.interface.drained !== false) {
@@ -170,13 +170,13 @@ async function call(language, caller, numbers) {
                             resolve();
                         }
                         try {
-                            let result = await confirm_1.default(connection.interface.internal, +index);
+                            let result = await (0, confirm_1.default)(connection.interface.internal, +index);
                             let changed = connection.identifier !== result;
                             caller.interface.internal.write(`${connection.number}: (${changed ? 'x' : '='}) ${result.replace(/[\r\n]/g, '')}\r\n`);
                             close();
                         }
                         catch (err) {
-                            logging_1.logger.log(logging_1.inspect `error: ${err}`);
+                            logging_1.logger.log((0, logging_1.inspect) `error: ${err}`);
                             caller.interface.internal.write(`${connection.number}: ${err}\r\n`);
                             close();
                         }
@@ -185,7 +185,7 @@ async function call(language, caller, numbers) {
             }
             await Promise.all(promises);
             logging_1.logger.log("confirmed all peers");
-            caller.interface.internal.write(texts_1.getText(language, "confirmation finished") + '\r\n\r\n');
+            caller.interface.internal.write((0, texts_1.getText)(language, "confirmation finished") + '\r\n\r\n');
             caller.interface.removeListener('end', handleAbort); // don't handle aborts if not aborted
             caller.interface.once('end', () => caller.socket.end());
             caller.interface.end(); // end the interface

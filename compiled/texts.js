@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getValidLanguages = exports.isLanguage = exports.getText = void 0;
 const logging_1 = require("./util/logging");
 // tslint:disable:object-literal-key-quotes
 const texts = {
@@ -101,7 +102,7 @@ function getText(language, text, args) {
             return string;
         }
     }
-    logging_1.logger.log(logging_1.inspect `\x1b[33mcould not find text ${text}\x1b[33m for language ${language}`);
+    logging_1.logger.log((0, logging_1.inspect) `\x1b[33mcould not find text ${text}\x1b[33m for language ${language}`);
     return '/no translation/';
 }
 exports.getText = getText;

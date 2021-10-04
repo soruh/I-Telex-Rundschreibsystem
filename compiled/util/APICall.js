@@ -30,7 +30,7 @@ function APIcall(method, host, port, path, data = {}) {
             headers,
             rejectUnauthorized: true,
             ca: [servercert],
-            checkServerIdentity: () => undefined,
+            checkServerIdentity: () => undefined, // don't check server identity
         }, res => {
             logging_1.logger.log('debug', 'made API request');
             let buffer = "";
@@ -39,16 +39,16 @@ function APIcall(method, host, port, path, data = {}) {
             });
             res.once('end', () => {
                 logging_1.logger.log('debug', 'API request ended');
-                logging_1.logger.log('silly', logging_1.inspect `ApiCall recieved data: ${buffer}`);
+                logging_1.logger.log('silly', (0, logging_1.inspect) `ApiCall recieved data: ${buffer}`);
                 if (res.statusCode !== 200) {
-                    logging_1.logger.log('debug', logging_1.inspect `API call failed with error code: ${res.statusCode} (${res.statusMessage})`);
+                    logging_1.logger.log('debug', (0, logging_1.inspect) `API call failed with error code: ${res.statusCode} (${res.statusMessage})`);
                     try {
                         const { error } = JSON.parse(buffer);
                         if (error)
-                            logging_1.logger.log('error', logging_1.inspect `API call failed with error message: ${error}`);
+                            logging_1.logger.log('error', (0, logging_1.inspect) `API call failed with error message: ${error}`);
                     }
                     catch (err) { /*fail silently*/ }
-                    reject(logging_1.inspect `${res.statusCode} (${res.statusMessage})`);
+                    reject((0, logging_1.inspect) `${res.statusCode} (${res.statusMessage})`);
                     return;
                 }
                 try {
@@ -70,7 +70,7 @@ function APIcall(method, host, port, path, data = {}) {
             });
         });
         req.on('error', err => {
-            logging_1.logger.log('error', logging_1.inspect `${err}`);
+            logging_1.logger.log('error', (0, logging_1.inspect) `${err}`);
             reject(err);
         });
         if (stringifiedData)

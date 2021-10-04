@@ -31,27 +31,34 @@ function encodeExt(ext) {
     }
 }
 class BaudotInterface extends Interface_1.default {
+    version = 1;
+    pulseRate = 3.5 * 1000;
+    asciifier = new BaudotToAscii_1.default();
+    baudotifier = new AsciiToBaudot_1.default();
+    packager = new PackageBaudotData_1.default();
+    chunker = new ChunkPackages_1.default();
+    writeBuffer = Buffer.alloc(0);
+    wasDrained = true;
+    accepted = false;
+    initialized = false;
+    bytesAcknowleged = 0;
+    bytesSent = 0;
+    bytesRecieved = 0;
+    ended = false;
+    baudotTimeout = setTimeout(() => this.onTimeout(), 30 * 1000);
+    pulse = setInterval(() => this.sendHeatbeat(), this.pulseRate);
+    get bytesUnacknowleged() {
+        return this.bytesSent - this.bytesAcknowleged + (this.bytesSent < this.bytesAcknowleged ? 256 : 0);
+    }
+    get bytesSendable() {
+        let sendable = 254 - this.bytesUnacknowleged;
+        return sendable < 0 ? 0 : sendable;
+    }
+    name = '?';
+    logger = console;
+    logDebug = logDebugDefault;
     constructor(logger, name, logDebug) {
         super();
-        this.version = 1;
-        this.pulseRate = 3.5 * 1000;
-        this.asciifier = new BaudotToAscii_1.default();
-        this.baudotifier = new AsciiToBaudot_1.default();
-        this.packager = new PackageBaudotData_1.default();
-        this.chunker = new ChunkPackages_1.default();
-        this.writeBuffer = Buffer.alloc(0);
-        this.wasDrained = true;
-        this.accepted = false;
-        this.initialized = false;
-        this.bytesAcknowleged = 0;
-        this.bytesSent = 0;
-        this.bytesRecieved = 0;
-        this.ended = false;
-        this.baudotTimeout = setTimeout(() => this.onTimeout(), 30 * 1000);
-        this.pulse = setInterval(() => this.sendHeatbeat(), this.pulseRate);
-        this.name = '?';
-        this.logger = console;
-        this.logDebug = logDebugDefault;
         let fullName;
         if (name) {
             if (name instanceof Array) {
@@ -107,13 +114,6 @@ class BaudotInterface extends Interface_1.default {
         this.external.on("close", () => logger.log("outside closed"));
         this.internal.on("close", () => logger.log("inside closed"));
         this.printDebugString();
-    }
-    get bytesUnacknowleged() {
-        return this.bytesSent - this.bytesAcknowleged + (this.bytesSent < this.bytesAcknowleged ? 256 : 0);
-    }
-    get bytesSendable() {
-        let sendable = 254 - this.bytesUnacknowleged;
-        return sendable < 0 ? 0 : sendable;
     }
     debug(text, verbosity = 2) {
         if (verbosity <= this.logDebug) {
@@ -189,21 +189,21 @@ class BaudotInterface extends Interface_1.default {
         const drained = this.bytesUnacknowleged === 0 && this.writeBuffer.length === 0;
         if (drained) {
             if (!this.wasDrained) {
-                this.debug(logging_1.inspect `drained`);
+                this.debug((0, logging_1.inspect) `drained`);
                 this.emit("drain");
                 this.wasDrained = true;
             }
         }
         else {
             if (this.wasDrained) {
-                this.debug(logging_1.inspect `undrained`);
+                this.debug((0, logging_1.inspect) `undrained`);
                 this.wasDrained = false;
             }
         }
         return drained;
     }
     resetTimeout() {
-        this.debug(logging_1.inspect `resetTimeout`);
+        this.debug((0, logging_1.inspect) `resetTimeout`);
         clearTimeout(this.baudotTimeout);
         this.baudotTimeout = setTimeout(() => this.onTimeout(), 30 * 1000);
     }
@@ -213,11 +213,11 @@ class BaudotInterface extends Interface_1.default {
         this.end(true);
     }
     sendEnd() {
-        this.debug(logging_1.inspect `sendEnd`);
+        this.debug((0, logging_1.inspect) `sendEnd`);
         this._external.write(Buffer.from([3, 0]));
     }
     sendReject(reason) {
-        this.debug(logging_1.inspect `sendReject`);
+        this.debug((0, logging_1.inspect) `sendReject`);
         let size = reason.length > 20 ? 20 : reason.length;
         let buffer = Buffer.alloc(size);
         buffer[0] = 4;
@@ -226,21 +226,21 @@ class BaudotInterface extends Interface_1.default {
         this._external.write(buffer);
     }
     sendDirectDial(extension) {
-        this.debug(logging_1.inspect `sendDirectDial extension: ${extension}`);
+        this.debug((0, logging_1.inspect) `sendDirectDial extension: ${extension}`);
         if (extension < 110 && extension >= 0)
             this._external.write(Buffer.from([1, 1, extension]));
     }
     sendHeatbeat() {
-        this.debug(logging_1.inspect `sendHeatbeat`);
+        this.debug((0, logging_1.inspect) `sendHeatbeat`);
         this.printDebugString();
         this._external.write(Buffer.from([0, 0]));
     }
     sendAcknowledge(nBytes) {
-        this.debug(logging_1.inspect `sendAcknowledge ${nBytes}`);
+        this.debug((0, logging_1.inspect) `sendAcknowledge ${nBytes}`);
         this._external.write(Buffer.from([6, 1, nBytes]));
     }
     sendVersion(value) {
-        this.debug(logging_1.inspect `sendVersion version: ${value}`);
+        this.debug((0, logging_1.inspect) `sendVersion version: ${value}`);
         this._external.write(Buffer.from([7, byteSize(value), value]));
     }
     accept() {
@@ -253,7 +253,7 @@ class BaudotInterface extends Interface_1.default {
         this.sendDirectDial(encodeExt(extension));
     }
     write(string) {
-        this.debug(logging_1.inspect `sendString string: ${string.length} ${util.inspect(string)}`);
+        this.debug((0, logging_1.inspect) `sendString string: ${string.length} ${util.inspect(string)}`);
         this.baudotifier.write(string, () => {
             this.sendBuffered();
         });
@@ -277,7 +277,7 @@ class BaudotInterface extends Interface_1.default {
         // logger.log(type, data);
         switch (type) {
             case 0:
-                this.debug(logging_1.inspect `Heartbeat`);
+                this.debug((0, logging_1.inspect) `Heartbeat`);
                 this.emit("ack", null);
                 if (!this.initialized) {
                     this.initialized = true;
@@ -285,12 +285,12 @@ class BaudotInterface extends Interface_1.default {
                 }
                 break;
             case 1:
-                this.debug(logging_1.inspect `Direct dial ${data[0]}`);
+                this.debug((0, logging_1.inspect) `Direct dial ${data[0]}`);
                 this.emit("call", data[0]);
                 this.initialized = true;
                 break;
             case 2:
-                this.debug(logging_1.inspect `Baudot data ${data.length} bytes`);
+                this.debug((0, logging_1.inspect) `Baudot data ${data.length} bytes`);
                 this.asciifier.write(Buffer.from(data));
                 this.bytesRecieved = (this.bytesRecieved + data.length) % 0x100;
                 this.sendAcknowledge(this.bytesRecieved);
@@ -300,18 +300,18 @@ class BaudotInterface extends Interface_1.default {
                 }
                 break;
             case 3:
-                this.debug(logging_1.inspect `End`);
+                this.debug((0, logging_1.inspect) `End`);
                 this.emit('request end');
                 this.end();
                 break;
             case 4:
-                this.debug(logging_1.inspect `Reject ${Buffer.from(data).toString()}`);
+                this.debug((0, logging_1.inspect) `Reject ${Buffer.from(data).toString()}`);
                 this.emit("reject", Buffer.from(data).toString());
                 this.emit('request end');
                 this.end();
                 break;
             case 6:
-                this.debug(logging_1.inspect `Acknowledge ${data[0]}`);
+                this.debug((0, logging_1.inspect) `Acknowledge ${data[0]}`);
                 this.emit("ack", data[0]);
                 this.bytesAcknowleged = data[0];
                 if (this.bytesUnacknowleged === 0) {
@@ -321,22 +321,22 @@ class BaudotInterface extends Interface_1.default {
                 this.isDrained(); // update drainage status
                 break;
             case 7:
-                this.debug(logging_1.inspect `Version ${data[0]} ${Buffer.from(data).readNullTermString(void (0), 1)}`);
+                this.debug((0, logging_1.inspect) `Version ${data[0]} ${Buffer.from(data).readNullTermString(void (0), 1)}`);
                 if (data[0] !== this.version)
                     this.sendVersion(this.version);
                 break;
             case 8:
-                this.debug(logging_1.inspect `Self test ${data.map(x => x.toString(16).padStart(2, '0'))}`);
+                this.debug((0, logging_1.inspect) `Self test ${data.map(x => x.toString(16).padStart(2, '0'))}`);
                 break;
             case 9:
-                this.debug(logging_1.inspect `Remote config`);
+                this.debug((0, logging_1.inspect) `Remote config`);
                 break;
             default:
-                this.debug(logging_1.inspect `unknown package type: ${type} data: ${data}`);
+                this.debug((0, logging_1.inspect) `unknown package type: ${type} data: ${data}`);
         }
     }
     actuallyEnd(endTimeout) {
-        this.debug(logging_1.inspect `ending baudotinterface`);
+        this.debug((0, logging_1.inspect) `ending baudotinterface`);
         this.ended = true;
         clearTimeout(endTimeout);
         clearTimeout(this.baudotTimeout);
@@ -347,10 +347,10 @@ class BaudotInterface extends Interface_1.default {
     }
     end(force = false) {
         if (this.ended) {
-            this.debug(logging_1.inspect `already ended`);
+            this.debug((0, logging_1.inspect) `already ended`);
             return;
         }
-        this.debug(logging_1.inspect `end`);
+        this.debug((0, logging_1.inspect) `end`);
         try {
             this.sendEnd();
         }
@@ -368,7 +368,7 @@ class BaudotInterface extends Interface_1.default {
             this.actuallyEnd(endTimeout);
         }
         else {
-            this.debug(logging_1.inspect `not ending baudotinterface, because it is not drained yet.`);
+            this.debug((0, logging_1.inspect) `not ending baudotinterface, because it is not drained yet.`);
             this.once('drain', () => {
                 this.actuallyEnd(endTimeout);
             });

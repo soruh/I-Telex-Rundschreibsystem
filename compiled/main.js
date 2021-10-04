@@ -40,7 +40,7 @@ server.on('connection', socket => {
         else {
             interFace = new BaudotInterface_1.default(logging_1.logger, ["\x1b[35m", "caller", "\x1b[0m"]);
         }
-        logging_1.logger.log(logging_1.inspect `${interFace instanceof BaudotInterface_1.default ? 'baudot' : 'ascii'} client calling`);
+        logging_1.logger.log((0, logging_1.inspect) `${interFace instanceof BaudotInterface_1.default ? 'baudot' : 'ascii'} client calling`);
         interFace.on('end', () => {
             socket.end();
         });
@@ -52,7 +52,7 @@ server.on('connection', socket => {
             interFace.end(true);
             // logStreamIn.end();
             // logStreamOut.end();
-            logging_1.logger.log(logging_1.inspect `calling client disconnected`);
+            logging_1.logger.log((0, logging_1.inspect) `calling client disconnected`);
         });
         async function handleClient() {
             interFace.internal.resume();
@@ -75,15 +75,15 @@ server.on('connection', socket => {
             let callerIdentifier = "";
             try {
                 // interFace.internal.resume();
-                callerIdentifier = await confirm_1.default(interFace.internal);
-                logging_1.logger.log(logging_1.inspect `caller: ${require('util').inspect(callerIdentifier).slice(1, -1)}`);
-                fs_1.appendFileSync(path_1.join(__dirname, '../caller_log.txt'), JSON.stringify({
+                callerIdentifier = await (0, confirm_1.default)(interFace.internal);
+                logging_1.logger.log((0, logging_1.inspect) `caller: ${require('util').inspect(callerIdentifier).slice(1, -1)}`);
+                (0, fs_1.appendFileSync)((0, path_1.join)(__dirname, '../caller_log.txt'), JSON.stringify({
                     time: new Date(),
                     caller: callerIdentifier,
                 }) + '\n');
             }
             catch (err) {
-                logging_1.logger.log(logging_1.inspect `caller confimation failed: ${err}`);
+                logging_1.logger.log((0, logging_1.inspect) `caller confimation failed: ${err}`);
             }
             interFace.internal.write(config_1.IDENTIFIER);
             interFace.internal.write('\r\n\n');
@@ -95,17 +95,17 @@ server.on('connection', socket => {
                 output: interFace.internal,
             });
             try {
-                var result = await ui_1.default(rl);
+                var result = await (0, ui_1.default)(rl);
             }
             catch (err) {
-                logging_1.logger.log(logging_1.inspect `ui failed: ${err}`);
+                logging_1.logger.log((0, logging_1.inspect) `ui failed: ${err}`);
                 socket.end();
                 return;
             }
             interFace.internal.unpipe(removedCr);
             switch (result.nextAction) {
                 case 'call':
-                    await call_1.default(result.language, {
+                    await (0, call_1.default)(result.language, {
                         interface: interFace,
                         socket,
                         identifier: callerIdentifier,
@@ -117,7 +117,7 @@ server.on('connection', socket => {
                     interFace.once('end', () => socket.end());
                     interFace.end();
             }
-            logging_1.logger.log(logging_1.inspect `ui actions finished`);
+            logging_1.logger.log((0, logging_1.inspect) `ui actions finished`);
         }
         function connectSocket(relayChunk = true) {
             if (relayChunk)
@@ -128,17 +128,17 @@ server.on('connection', socket => {
         if (interFace instanceof BaudotInterface_1.default) {
             interFace.on('call', ext => {
                 handleClient();
-                logging_1.logger.log(logging_1.inspect `baudot client calling extension: ${ext}`);
+                logging_1.logger.log((0, logging_1.inspect) `baudot client calling extension: ${ext}`);
             });
             connectSocket(true);
         }
         else {
             connectSocket(false);
             handleClient();
-            logging_1.logger.log(logging_1.inspect `ascii client calling`);
+            logging_1.logger.log((0, logging_1.inspect) `ascii client calling`);
         }
     });
 });
 server.listen(config_1.PORT, () => {
-    logging_1.logger.log(logging_1.inspect `listening on port: ${config_1.PORT}`);
+    logging_1.logger.log((0, logging_1.inspect) `listening on port: ${config_1.PORT}`);
 });

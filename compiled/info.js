@@ -37,7 +37,7 @@ function getInfo(language) {
         case "german":
             return infoDE;
         default:
-            return texts_1.getText(language, 'no info') + ': ' + language;
+            return (0, texts_1.getText)(language, 'no info') + ': ' + language;
     }
 }
 exports.default = getInfo;

@@ -2,9 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const stream_1 = require("stream");
 class ChunkPackages extends stream_1.Transform {
+    buffer = Buffer.alloc(0);
     constructor(options) {
         super(options);
-        this.buffer = Buffer.alloc(0);
     }
     _transform(chunk, encoding, callback) {
         this.buffer = Buffer.concat([this.buffer, chunk]);

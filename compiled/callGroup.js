@@ -23,7 +23,7 @@ function callOne(number, index, numbers) {
         // output.write(`calling: ${number}\r\n`);
         let peer;
         try {
-            peer = await ITelexServerCom_1.peerQuery(number);
+            peer = await (0, ITelexServerCom_1.peerQuery)(number);
         }
         catch (err) {
             logging_1.logger.log(`Error in peerQuery:\r\n${err}`);
@@ -50,7 +50,7 @@ function callOne(number, index, numbers) {
             }
             // const logStreamIn  = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[033m in\x1b[0m`, interFace.internal);
             // const logStreamOut = new logStream(inspect`called client ${index.toString().padStart(padding)} \x1b[034mout\x1b[0m`, interFace._internal);
-            if (blacklist_1.isBlacklisted(number)) {
+            if ((0, blacklist_1.isBlacklisted)(number)) {
                 // output.write(`${peer.name}(${peer.number}) has been blacklisted\r\n\n`);
                 reject('blacklisted');
                 return;
@@ -90,7 +90,7 @@ function callOne(number, index, numbers) {
                     });
                 }
                 try {
-                    const result = await confirm_1.default(interFace.internal, +index);
+                    const result = await (0, confirm_1.default)(interFace.internal, +index);
                     // output.write(result+'\r\n');
                     // interFace.internal.unpipe(output);
                     // if(interFace instanceof BaudotInterface) interFace.asciifier.setMode(baudotModeUnknown);
@@ -105,7 +105,7 @@ function callOne(number, index, numbers) {
                     resolve(connection);
                 }
                 catch (err) {
-                    logging_1.logger.log(logging_1.inspect `confimation failed: ${err}`);
+                    logging_1.logger.log((0, logging_1.inspect) `confimation failed: ${err}`);
                     if (err.message === 'timeout') {
                         interFace.end();
                         reject('timeout');
@@ -128,14 +128,14 @@ function callOne(number, index, numbers) {
                 socket.end();
                 const explainedError = explainErrorCode(err.code);
                 const expectedError = explainedError === 'nc';
-                logging_1.logger.log(logging_1.inspect `client socket for ${peer.number} had an ${expectedError ? 'expected' : 'unexpected'} error${expectedError ? '' : ': '}${expectedError ? '' : err}`);
+                logging_1.logger.log((0, logging_1.inspect) `client socket for ${peer.number} had an ${expectedError ? 'expected' : 'unexpected'} error${expectedError ? '' : ': '}${expectedError ? '' : err}`);
                 reject(explainedError);
             });
             socket.on('close', () => {
                 interFace.end();
                 // logStreamIn.end();
                 // logStreamOut.end();
-                logging_1.logger.log(logging_1.inspect `called client disconnected`);
+                logging_1.logger.log((0, logging_1.inspect) `called client disconnected`);
             });
             socket.connect({
                 host: peer.hostname || peer.ipaddress,

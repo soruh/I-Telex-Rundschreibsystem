@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Interface_1 = require("../Interface");
 const ExtractAsciiExtension_1 = require("./ExtractAsciiExtension");
 class AsciiInterface extends Interface_1.default {
+    extractor;
     constructor(caller) {
         super();
         this._external.once('close', () => {

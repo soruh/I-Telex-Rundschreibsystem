@@ -3,12 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const stream_1 = require("stream");
 const events_1 = require("events");
 class ExtractAsciiExtension extends stream_1.Transform {
-    constructor() {
-        super(...arguments);
-        this.gotExtension = false;
-        this.extensionBuffer = '';
-        this.emitter = new events_1.EventEmitter();
-    }
+    gotExtension = false;
+    extensionBuffer = '';
+    emitter = new events_1.EventEmitter();
     _transform(chunk, encoding, callback) {
         if (this.gotExtension) {
             callback(null, chunk);
