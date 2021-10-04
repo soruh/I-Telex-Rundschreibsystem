@@ -1,11 +1,12 @@
 import { Duplex } from "stream";
+import config = require("./config");
 import { logger, inspect } from "./util/logging";
 
 function confirm(socket: Duplex, index?: number): Promise<string> {
 	return new Promise((resolve, reject) => {
 		let timeout = setTimeout(() => {
 			end(false, "df");
-		}, 10000);
+		}, config.CONFIRMATION_MAX_RESULT_WAIT);
 		logger.log(inspect`confirming client ${index == null ? 'caller' : 'client ' + index}`);
 		// let loggingStream = new logStream(inspect`called client ${index}`, socket);
 
@@ -44,9 +45,6 @@ function confirm(socket: Duplex, index?: number): Promise<string> {
 			lastPackage = Date.now();
 		});
 
-
-
-
 		let resolveTimeout: NodeJS.Timer;
 		// always resolve after 7,5 secs
 
@@ -56,7 +54,7 @@ function confirm(socket: Duplex, index?: number): Promise<string> {
 			clearTimeout(timeout);
 			resolveTimeout = setTimeout(() => {
 				end(true);
-			}, 7500);
+			}, config.CONFIRMATION_MAX_RESULT_DURATION);
 		});
 
 
