@@ -36,7 +36,7 @@ const texts = {
         "help_m_=": "ausgewaehlte nummern anrufen",
         "help_m_b": "blacklist bearbeiten",
         "help_m_?": "ausgewaehlte nummern ausdrucken",
-        "help_m_-": "ausgewahl einer nummer entfernen",
+        "help_m_-": "ausgewaehlte nummer entfernen",
         "help_m_+": "nummer ausgewaehlen",
         "help_m_l": "sprache aendern",
         "no info": "keine info fuer sprache",
